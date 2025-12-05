@@ -1,0 +1,21 @@
+services:
+  chat_service_app:
+    build:
+      context: .
+      dockerfile: docker/app/Dockerfile
+    container_name: chat_service_app
+    ports:
+      - "127.0.0.1:8081:8080"
+    env_file:
+      - .env
+
+  chat_service_app_test:
+    container_name: chat_service_app_test
+    build:
+      context: .
+      dockerfile: docker/app/Dockerfile
+    volumes:
+      - ./mount:/mount
+    working_dir: /app
+    env_file:
+      - .env.test
