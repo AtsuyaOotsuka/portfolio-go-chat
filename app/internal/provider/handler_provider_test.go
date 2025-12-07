@@ -10,3 +10,12 @@ func TestBindHealthCheckHandler(t *testing.T) {
 		t.Fatal("BindHealthCheckHandler returned nil")
 	}
 }
+
+func TestBindRoomHandler(t *testing.T) {
+	provider := NewProvider()
+	roomHandler := provider.BindRoomHandler()
+
+	if roomHandler == nil {
+		t.Fatal("BindRoomHandler returned nil")
+	}
+}

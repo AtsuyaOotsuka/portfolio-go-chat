@@ -1,0 +1,148 @@
+package handler
+
+import (
+	"fmt"
+	"time"
+
+	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/dto"
+	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/model"
+	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/service/mongo_svc"
+	"github.com/labstack/echo/v4"
+)
+
+type RoomHandlerInterface interface {
+	List(c echo.Context) error
+	Create(c echo.Context) error
+	Detail(c echo.Context) error
+	Members(c echo.Context) error
+	Join(c echo.Context) error
+	Leave(c echo.Context) error
+	Delete(c echo.Context) error
+	AddMember(c echo.Context) error
+	RemoveMember(c echo.Context) error
+}
+
+type RoomHandler struct {
+	BaseHandler
+	service mongo_svc.RoomSvcInterface
+	dto     dto.RoomDtoInterface
+}
+
+func NewRoomHandler(
+	service mongo_svc.RoomSvcInterface,
+	dto dto.RoomDtoInterface,
+) *RoomHandler {
+	return &RoomHandler{
+		service: service,
+		dto:     dto,
+	}
+}
+
+func (h *RoomHandler) List(c echo.Context) error {
+	target := c.QueryParam("target")
+	if target == "" {
+		target = "all"
+	}
+	uuid := h.GetUuid(c)
+
+	rooms, err := h.service.GetRoomList(uuid, target)
+	if err != nil {
+		return c.JSON(500, echo.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return c.JSON(200, echo.Map{
+		"rooms": h.dto.ResponseRoomList(rooms, uuid),
+	})
+}
+
+type CreateRoomRequest struct {
+	Name      string `json:"name" form:"name" validate:"required"`
+	IsPrivate bool   `json:"is_private" form:"is_private"`
+}
+
+func (h *RoomHandler) Create(c echo.Context) error {
+	var req CreateRoomRequest
+	if err := h.validateRequest(c, &req); err != nil {
+		fmt.Println("Validation error:", err)
+		return c.JSON(400, echo.Map{
+			"error": err.Error(),
+		})
+	}
+
+	room := model.Room{
+		Name:      req.Name,
+		OwnerID:   h.GetUuid(c),
+		CreatedAt: time.Now(),
+		Members:   []string{h.GetUuid(c)},
+		IsPrivate: req.IsPrivate,
+	}
+
+	InsertedID, err := h.service.CreateRoom(room)
+	if err != nil {
+		return c.JSON(500, echo.Map{
+			"error": err.Error(),
+		})
+	}
+	fmt.Print(InsertedID)
+
+	// Implement room creation logic here
+	return c.JSON(200, echo.Map{
+		"message":    "Room created successfully",
+		"room_id":    InsertedID,
+		"room_name":  room.Name,
+		"created_at": room.CreatedAt,
+	})
+}
+
+func (h *RoomHandler) Detail(c echo.Context) error {
+	// Implement room detail logic here
+	return c.JSON(200, echo.Map{
+		"room_id":   c.Param("room_id"),
+		"room_name": "Sample Room",
+	})
+}
+
+func (h *RoomHandler) Members(c echo.Context) error {
+	// Implement room members logic here
+	return c.JSON(200, echo.Map{
+		"room_id": c.Param("room_id"),
+		"members": []string{"user1", "user2"},
+	})
+}
+
+func (h *RoomHandler) Join(c echo.Context) error {
+	// Implement room join logic here
+	return c.JSON(200, echo.Map{
+		"message": "joined room",
+	})
+}
+
+func (h *RoomHandler) Leave(c echo.Context) error {
+	// Implement room leave logic here
+	return c.JSON(200, echo.Map{
+		"message": "left room",
+	})
+}
+
+func (h *RoomHandler) Delete(c echo.Context) error {
+	// Implement room deletion logic here
+	return c.JSON(200, echo.Map{
+		"message": "room deleted",
+	})
+}
+
+func (h *RoomHandler) AddMember(c echo.Context) error {
+	// Implement add member logic here
+	return c.JSON(200, echo.Map{
+		"message": "member added",
+	})
+}
+
+func (h *RoomHandler) RemoveMember(c echo.Context) error {
+	// Implement remove member logic here
+	return c.JSON(200, echo.Map{
+		"message": "member removed",
+	})
+}

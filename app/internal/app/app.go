@@ -20,7 +20,6 @@ func (a *App) Init(e *echo.Echo) {
 	a.Echo = e
 	a.initProviders()
 	a.initMiddlewares()
-	a.entryBeforeGlobalMiddleware()
+	a.entryGlobalMiddleware()
 	a.entryRoutes()
-	a.entryAfterGlobalMiddleware()
 }

@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/consts"
 	"github.com/AtsuyaOotsuka/portfolio-go-lib/atylabjwt"
 	"github.com/labstack/echo/v4"
 )
@@ -35,30 +36,28 @@ func (m *JWTMiddleware) extractBearerToken(c echo.Context) string {
 }
 
 func (m *JWTMiddleware) Handler() echo.MiddlewareFunc {
-	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			var err error
-			jwtToken := m.extractBearerToken(c)
-			if jwtToken == "" {
-				return echo.NewHTTPError(http.StatusUnauthorized, echo.Map{
-					"error": "not set jwt token",
-				})
-			}
-
-			jwtSecret := os.Getenv("JWT_SECRET_KEY")
-			if err = m.jwt.Validate(jwtSecret, jwtToken); err != nil {
-				return echo.NewHTTPError(http.StatusUnauthorized, echo.Map{
-					"error": err.Error(),
-				})
-			}
-			uuid := m.jwt.GetUUID()
-			email := m.jwt.GetEmail()
-			c.Set("uuid", uuid)
-			c.Set("email", email)
-			fmt.Println("UUID:", uuid)
-			fmt.Println("Email:", email)
-
-			return next(c)
+	return BeforeHandler(func(c echo.Context) error {
+		var err error
+		jwtToken := m.extractBearerToken(c)
+		if jwtToken == "" {
+			return echo.NewHTTPError(http.StatusUnauthorized, echo.Map{
+				"error": "not set jwt token",
+			})
 		}
-	}
+
+		jwtSecret := os.Getenv("JWT_SECRET_KEY")
+		if err = m.jwt.Validate(jwtSecret, jwtToken); err != nil {
+			return echo.NewHTTPError(http.StatusUnauthorized, echo.Map{
+				"error": err.Error(),
+			})
+		}
+		uuid := m.jwt.GetUUID()
+		email := m.jwt.GetEmail()
+		c.Set(consts.ContextKeys.Uuid, uuid)
+		c.Set(consts.ContextKeys.Email, email)
+		fmt.Println("UUID:", uuid)
+		fmt.Println("Email:", email)
+
+		return nil
+	})
 }

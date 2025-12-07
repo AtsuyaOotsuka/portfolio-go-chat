@@ -19,3 +19,7 @@ func NewRouting(
 		middleware: middleware,
 	}
 }
+
+func (r *Routing) Finalize(routeGroup *echo.Group) {
+	_ = routeGroup
+}

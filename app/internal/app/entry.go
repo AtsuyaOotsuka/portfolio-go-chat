@@ -4,14 +4,12 @@ import (
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/routing"
 )
 
-func (a *App) entryBeforeGlobalMiddleware() {
+func (a *App) entryGlobalMiddleware() {
 	// 前処理系ミドルウェアをここに追加
 	a.Echo.Use(a.middleware.Jwt)
 	a.Echo.Use(a.middleware.Csrf)
-}
-
-func (a *App) entryAfterGlobalMiddleware() {
 	// 後処理系ミドルウェアをここに追加
+	// 例: a.Echo.Use(a.middleware.Logging)
 }
 
 func (a *App) entryRoutes() {
@@ -19,5 +17,9 @@ func (a *App) entryRoutes() {
 
 	routing.HealthCheckRoute(
 		a.provider.BindHealthCheckHandler(),
+	)
+
+	routing.RoomRoute(
+		a.provider.BindRoomHandler(),
 	)
 }

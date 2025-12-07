@@ -1,4 +1,17 @@
 services:
+
+  chat_service_mongo:
+    image: mongo:6
+    container_name: chat_service_mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - chat_service_mongo_data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+
   chat_service_app:
     build:
       context: .
@@ -19,3 +32,6 @@ services:
     working_dir: /app
     env_file:
       - .env.test
+
+volumes:
+  chat_service_mongo_data:

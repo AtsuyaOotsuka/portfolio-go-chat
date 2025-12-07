@@ -1,7 +1,17 @@
 package provider
 
-import "github.com/AtsuyaOotsuka/portfolio-go-chat/internal/handler"
+import (
+	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/dto"
+	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/handler"
+)
 
 func (p *Provider) BindHealthCheckHandler() *handler.HealthCheckHandler {
 	return handler.NewHealthCheckHandler()
+}
+
+func (p *Provider) BindRoomHandler() *handler.RoomHandler {
+	return handler.NewRoomHandler(
+		p.bindRoomSvc(),
+		dto.NewRoomDtoStruct(),
+	)
 }
