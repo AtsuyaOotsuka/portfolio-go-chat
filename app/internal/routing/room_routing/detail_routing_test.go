@@ -12,7 +12,6 @@ import (
 
 func TestDetailRoute(t *testing.T) {
 	expected := []funcs.ExpectedRoute{
-		{Path: "/room/:room_id/detail", Method: "GET"},
 		{Path: "/room/:room_id/members", Method: "GET"},
 		{Path: "/room/:room_id/join", Method: "POST"},
 		{Path: "/room/:room_id/leave", Method: "POST"},

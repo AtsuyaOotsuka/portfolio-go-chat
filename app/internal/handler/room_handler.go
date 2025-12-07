@@ -13,9 +13,8 @@ import (
 type RoomHandlerInterface interface {
 	List(c echo.Context) error
 	Create(c echo.Context) error
-	Detail(c echo.Context) error
-	Members(c echo.Context) error
 	Join(c echo.Context) error
+	Members(c echo.Context) error
 	Leave(c echo.Context) error
 	Delete(c echo.Context) error
 	AddMember(c echo.Context) error
@@ -96,11 +95,36 @@ func (h *RoomHandler) Create(c echo.Context) error {
 	})
 }
 
-func (h *RoomHandler) Detail(c echo.Context) error {
-	// Implement room detail logic here
+type RoomJoinRequest struct {
+	RoomID string `json:"room_id" form:"room_id" validate:"required"`
+}
+
+func (h *RoomHandler) Join(c echo.Context) error {
+	var req RoomJoinRequest
+	var err error
+	if err := h.validateRequest(c, &req); err != nil {
+		fmt.Println("Validation error:", err)
+		return c.JSON(400, echo.Map{
+			"error": err.Error(),
+		})
+	}
+
+	_, err = h.service.GetRoomByID(req.RoomID)
+	if err != nil {
+		return c.JSON(500, echo.Map{
+			"error": err.Error(),
+		})
+	}
+
+	err = h.service.JoinRoom(req.RoomID, h.GetUuid(c))
+	if err != nil {
+		return c.JSON(500, echo.Map{
+			"error": err.Error(),
+		})
+	}
+
 	return c.JSON(200, echo.Map{
-		"room_id":   c.Param("room_id"),
-		"room_name": "Sample Room",
+		"message": "Joined room successfully",
 	})
 }
 
@@ -109,13 +133,6 @@ func (h *RoomHandler) Members(c echo.Context) error {
 	return c.JSON(200, echo.Map{
 		"room_id": c.Param("room_id"),
 		"members": []string{"user1", "user2"},
-	})
-}
-
-func (h *RoomHandler) Join(c echo.Context) error {
-	// Implement room join logic here
-	return c.JSON(200, echo.Map{
-		"message": "joined room",
 	})
 }
 

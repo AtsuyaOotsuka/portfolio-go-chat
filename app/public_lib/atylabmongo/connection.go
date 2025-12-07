@@ -28,7 +28,7 @@ type MongoConnectionStruct struct{}
 func (m *MongoConnectionStruct) NewMongoConnect(database string, mongoUri string) (*MongoConnector, error) {
 	client, ctx, cancelFunc, err := m.connect(mongoUri)
 	if err != nil {
-		return nil, err
+		return &MongoConnector{}, err
 	}
 
 	mongoConnector := &MongoConnector{}

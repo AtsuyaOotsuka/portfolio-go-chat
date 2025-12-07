@@ -6,11 +6,14 @@ import (
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/model"
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/usecase"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type RoomSvcInterface interface {
 	GetRoomList(uuid string, target string) ([]model.Room, error)
 	CreateRoom(room model.Room) (string, error)
+	GetRoomByID(roomID string) (model.Room, error)
+	JoinRoom(roomID string, uuid string) error
 }
 
 type RoomSvcStruct struct {
@@ -88,4 +91,58 @@ func (s *RoomSvcStruct) CreateRoom(room model.Room) (string, error) {
 	}
 
 	return InsertedID, nil
+}
+
+func (s *RoomSvcStruct) GetRoomByID(roomID string) (model.Room, error) {
+	var err error
+	mongo, err := s.mongo.MongoInit()
+	if err != nil {
+		fmt.Println("Failed to initialize MongoDB:", err)
+		return model.Room{}, err
+	}
+
+	defer mongo.MongoConnector.Cancel()
+
+	collection := mongo.MongoConnector.Db.Collection("rooms")
+
+	id, err := primitive.ObjectIDFromHex(roomID)
+	if err != nil {
+		return model.Room{}, err
+	}
+
+	var room model.Room
+	err = collection.FindOne(mongo.MongoConnector.Ctx, bson.M{"_id": id}, &room)
+	if err != nil {
+		return model.Room{}, err
+	}
+
+	return room, nil
+
+}
+
+func (s *RoomSvcStruct) JoinRoom(roomID string, uuid string) error {
+	mongo, err := s.mongo.MongoInit()
+	if err != nil {
+		fmt.Println("Failed to initialize MongoDB:", err)
+		return err
+	}
+	defer mongo.MongoConnector.Cancel()
+
+	id, err := primitive.ObjectIDFromHex(roomID)
+	if err != nil {
+		return err
+	}
+
+	collection := mongo.MongoConnector.Db.Collection("rooms")
+
+	_, err = collection.UpdateOne(
+		mongo.MongoConnector.Ctx,
+		bson.M{"_id": id},
+		bson.M{"$addToSet": bson.M{"members": uuid}},
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

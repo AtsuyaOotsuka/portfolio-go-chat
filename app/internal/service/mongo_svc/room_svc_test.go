@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func TestNewRoomSvcStruct(t *testing.T) {
@@ -163,6 +164,115 @@ func TestCreateRoom(t *testing.T) {
 					t.Errorf("expected roomId to be 'mocked_id', got %s", roomId)
 				}
 
+				if m, ok := mongoConnectionStructMock.(interface{ AssertExpectations(*testing.T) }); ok {
+					m.AssertExpectations(t)
+				}
+			})
+		}
+	})
+}
+
+func TestGetRoomByID(t *testing.T) {
+	funcs.WithEnvMap(mongoSvcEnvs, t, func() {
+		tests := []struct {
+			name       string
+			initErr    bool
+			request    string
+			findOneErr bool
+			returnErr  bool
+		}{
+			{"success", false, "64a7b2f4e13e4c3f9c8b4567", false, false},
+			{"error", true, "64a7b2f4e13e4c3f9c8b4567", false, true},
+			{"invalid_id", false, "invalid_object_id", false, true},
+			{"findone_error", false, "64a7b2f4e13e4c3f9c8b4567", true, true},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				mongoCollectionMock := new(atylabmongo.MongoCollectionStructMock)
+				var room model.Room
+				if tt.findOneErr {
+					mongoCollectionMock.On("FindOne", mock.Anything, mock.Anything, &room).Return(assert.AnError)
+				} else {
+					mongoCollectionMock.On("FindOne", mock.Anything, mock.Anything, &room).Return(nil)
+				}
+
+				mongoDatabaseMock := new(atylabmongo.MongoDatabaseStructMock)
+				mongoDatabaseMock.On("Collection", "rooms").Return(mongoCollectionMock)
+
+				mongoConnectorStruct := &atylabmongo.MongoConnector{
+					Db:     mongoDatabaseMock,
+					Ctx:    context.TODO(),
+					Cancel: func() {},
+				}
+				if tt.initErr {
+					mongoConnectorStruct = nil
+				}
+
+				mongoConnectionStructMock := setupInitMock(tt.initErr, mongoConnectorStruct)
+
+				mongoUseCase := usecase.NewMongoUseCaseStruct(mongoConnectionStructMock)
+
+				roomSvc := NewRoomSvcStruct(mongoUseCase)
+
+				room, err := roomSvc.GetRoomByID(tt.request)
+				if (err != nil) != tt.returnErr {
+					t.Errorf("GetRoomByID() [%s] error = %v, initErr %v", tt.name, err, tt.initErr)
+				}
+
+				if tt.returnErr {
+					return
+				}
+
+				if m, ok := mongoConnectionStructMock.(interface{ AssertExpectations(*testing.T) }); ok {
+					m.AssertExpectations(t)
+				}
+			})
+		}
+	})
+}
+
+func TestJoinRoom(t *testing.T) {
+	funcs.WithEnvMap(mongoSvcEnvs, t, func() {
+
+		tests := []struct {
+			name         string
+			initErr      bool
+			request      string
+			updateOneErr bool
+			returnErr    bool
+		}{
+			{"success", false, "64a7b2f4e13e4c3f9c8b4567", false, false},
+			{"error", true, "64a7b2f4e13e4c3f9c8b4567", false, true},
+			{"invalid_id", false, "invalid_object_id", false, true},
+			{"updateone_error", false, "64a7b2f4e13e4c3f9c8b4567", true, true},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				mongoCollectionMock := new(atylabmongo.MongoCollectionStructMock)
+				if tt.updateOneErr {
+					mongoCollectionMock.On("UpdateOne", mock.Anything, mock.Anything, mock.Anything).Return(&mongo.UpdateResult{}, assert.AnError)
+				} else {
+					mongoCollectionMock.On("UpdateOne", mock.Anything, mock.Anything, mock.Anything).Return(&mongo.UpdateResult{}, nil)
+				}
+				mongoDatabaseMock := new(atylabmongo.MongoDatabaseStructMock)
+				mongoDatabaseMock.On("Collection", "rooms").Return(mongoCollectionMock)
+
+				mongoConnectorStruct := &atylabmongo.MongoConnector{
+					Ctx:    context.TODO(),
+					Db:     mongoDatabaseMock,
+					Cancel: func() {},
+				}
+				mongoConnectionStructMock := setupInitMock(tt.initErr, mongoConnectorStruct)
+
+				mongoUseCase := usecase.NewMongoUseCaseStruct(mongoConnectionStructMock)
+				roomSvc := NewRoomSvcStruct(mongoUseCase)
+
+				err := roomSvc.JoinRoom(tt.request, "user123")
+				if (err != nil) != tt.returnErr {
+					t.Errorf("JoinRoom() [%s] error = %v, initErr %v", tt.name, err, tt.initErr)
+				}
 				if m, ok := mongoConnectionStructMock.(interface{ AssertExpectations(*testing.T) }); ok {
 					m.AssertExpectations(t)
 				}

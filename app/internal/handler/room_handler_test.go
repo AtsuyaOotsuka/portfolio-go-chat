@@ -222,3 +222,102 @@ func TestCreate(t *testing.T) {
 		})
 	}
 }
+
+func TestJoin(t *testing.T) {
+	expected := map[string]map[string]any{
+		"success": {
+			"status":              200,
+			"body":                map[string]interface{}{"room_id": "existing-room-id-1234"},
+			"FindRoomByIDCalled":  1,
+			"FindRoomByIDSuccess": true,
+			"JoinRoomCalled":      1,
+			"JoinRoomSuccess":     true,
+		},
+		"validation error (missing room_id)": {
+			"status":              400,
+			"body":                map[string]interface{}{},
+			"FindRoomByIDCalled":  0,
+			"FindRoomByIDSuccess": false,
+			"JoinRoomCalled":      0,
+			"JoinRoomSuccess":     false,
+		},
+		"failure to find room": {
+			"status":              500,
+			"body":                map[string]interface{}{"room_id": "existing-room-id-1234"},
+			"FindRoomByIDCalled":  1,
+			"FindRoomByIDSuccess": false,
+			"JoinRoomCalled":      0,
+			"JoinRoomSuccess":     false,
+		},
+		"failure to join room": {
+			"status":              500,
+			"body":                map[string]interface{}{"room_id": "existing-room-id-1234"},
+			"FindRoomByIDCalled":  1,
+			"FindRoomByIDSuccess": true,
+			"JoinRoomCalled":      1,
+			"JoinRoomSuccess":     false,
+		},
+	}
+
+	for name, expect := range expected {
+		t.Run(name, func(t *testing.T) {
+
+			e := echo.New()
+			e.Validator = &usecase.CustomValidator{Validator: validator.New()}
+
+			body := expect["body"].(map[string]interface{})
+
+			jsonBody, _ := json.Marshal(body)
+			reqBody := strings.NewReader(string(jsonBody))
+
+			req := httptest.NewRequest(http.MethodPost, "/room/join", reqBody)
+			req.Header.Set("Content-Type", "application/json")
+
+			rec := httptest.NewRecorder()
+			c := e.NewContext(req, rec)
+			c.Set("uuid", "test-uuid-1234")
+
+			dto := dto.NewRoomDtoStruct()
+			svcMock := new(svc_mock.RoomSvcMock)
+
+			var findReturnErr error = nil
+			if !expect["FindRoomByIDSuccess"].(bool) {
+				findReturnErr = fmt.Errorf("GetRoomByID error")
+			}
+
+			if expect["FindRoomByIDCalled"].(int) != 0 {
+				svcMock.On("GetRoomByID", "existing-room-id-1234").Return(model.Room{}, findReturnErr).Times(expect["FindRoomByIDCalled"].(int))
+			}
+
+			var joinReturnErr error = nil
+			if !expect["JoinRoomSuccess"].(bool) {
+				joinReturnErr = fmt.Errorf("JoinRoom error")
+			}
+
+			if expect["JoinRoomCalled"].(int) != 0 {
+				svcMock.On("JoinRoom", "existing-room-id-1234", "test-uuid-1234").Return(joinReturnErr).Times(expect["JoinRoomCalled"].(int))
+			}
+
+			handler := NewRoomHandler(svcMock, dto)
+			err := handler.Join(c)
+			if err != nil {
+				t.Fatalf("Expected no error, got %v", err)
+			}
+
+			assert.Equal(t, expect["status"].(int), rec.Code)
+
+			if expect["FindRoomByIDCalled"].(int) != 0 {
+				svcMock.AssertExpectations(t)
+			} else {
+				svcMock.AssertNotCalled(t, "GetRoomByID")
+			}
+
+			if expect["JoinRoomCalled"].(int) == 0 {
+				svcMock.AssertNotCalled(t, "JoinRoom")
+			} else {
+				svcMock.AssertExpectations(t)
+			}
+		})
+	}
+
+}

@@ -48,7 +48,7 @@ func (s *MongoUseCaseStruct) MongoInit() (*Mongo, error) {
 
 	mongoConnector, err := s.mongoConnectorPkg.NewMongoConnect("chatapp", uri)
 	if err != nil {
-		return nil, err
+		return &Mongo{}, err
 	}
 
 	mongo := &Mongo{
