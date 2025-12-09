@@ -14,6 +14,7 @@ type RoomSvcInterface interface {
 	CreateRoom(room model.Room) (string, error)
 	GetRoomByID(roomID string) (model.Room, error)
 	JoinRoom(roomID string, uuid string) error
+	IsJoinedRoom(roomID string, uuid string) error
 }
 
 type RoomSvcStruct struct {
@@ -140,6 +141,34 @@ func (s *RoomSvcStruct) JoinRoom(roomID string, uuid string) error {
 		bson.M{"_id": id},
 		bson.M{"$addToSet": bson.M{"members": uuid}},
 	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *RoomSvcStruct) IsJoinedRoom(roomID string, uuid string) error {
+	mongo, err := s.mongo.MongoInit()
+	if err != nil {
+		fmt.Println("Failed to initialize MongoDB:", err)
+		return err
+	}
+
+	defer mongo.MongoConnector.Cancel()
+
+	collection := mongo.MongoConnector.Db.Collection("rooms")
+
+	id, err := primitive.ObjectIDFromHex(roomID)
+	if err != nil {
+		return err
+	}
+
+	var room model.Room
+	err = collection.FindOne(mongo.MongoConnector.Ctx, bson.M{
+		"_id":     id,
+		"members": uuid,
+	}, &room)
 	if err != nil {
 		return err
 	}

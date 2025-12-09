@@ -22,4 +22,8 @@ func (a *App) entryRoutes() {
 	routing.RoomRoute(
 		a.provider.BindRoomHandler(),
 	)
+
+	routing.MessageRoute(
+		a.provider.BindMessageHandler(),
+	)
 }

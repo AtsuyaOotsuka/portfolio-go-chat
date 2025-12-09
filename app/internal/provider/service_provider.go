@@ -9,3 +9,9 @@ func (p *Provider) bindRoomSvc() *mongo_svc.RoomSvcStruct {
 		p.bindMongoSvc(),
 	)
 }
+
+func (p *Provider) bindMessageSvc() *mongo_svc.MessageSvcStruct {
+	return mongo_svc.NewMessageSvcStruct(
+		p.bindMongoSvc(),
+	)
+}

@@ -70,11 +70,13 @@ func (h *RoomHandler) Create(c echo.Context) error {
 		})
 	}
 
+	uuid := h.GetUuid(c)
+
 	room := model.Room{
 		Name:      req.Name,
-		OwnerID:   h.GetUuid(c),
+		OwnerID:   uuid,
 		CreatedAt: time.Now(),
-		Members:   []string{h.GetUuid(c)},
+		Members:   []string{uuid},
 		IsPrivate: req.IsPrivate,
 	}
 

@@ -15,3 +15,11 @@ func (p *Provider) BindRoomHandler() *handler.RoomHandler {
 		dto.NewRoomDtoStruct(),
 	)
 }
+
+func (p *Provider) BindMessageHandler() *handler.MessageHandler {
+	return handler.NewMessageHandler(
+		p.bindMessageSvc(),
+		p.bindRoomSvc(),
+		dto.NewMessageDtoStruct(),
+	)
+}

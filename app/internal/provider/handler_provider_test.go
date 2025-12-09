@@ -19,3 +19,12 @@ func TestBindRoomHandler(t *testing.T) {
 		t.Fatal("BindRoomHandler returned nil")
 	}
 }
+
+func TestBindMessageHandler(t *testing.T) {
+	provider := NewProvider()
+	messageHandler := provider.BindMessageHandler()
+
+	if messageHandler == nil {
+		t.Fatal("BindMessageHandler returned nil")
+	}
+}

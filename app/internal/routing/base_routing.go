@@ -23,3 +23,18 @@ func NewRouting(
 func (r *Routing) Finalize(routeGroup *echo.Group) {
 	_ = routeGroup
 }
+
+type GroupRouting struct {
+	group  *echo.Group
+	schema string
+}
+
+func NewGroupRouting(
+	group *echo.Group,
+	schema string,
+) *GroupRouting {
+	return &GroupRouting{
+		group:  group,
+		schema: schema,
+	}
+}

@@ -20,7 +20,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func TestList(t *testing.T) {
+func TestRoomList(t *testing.T) {
 	expected := map[string]map[string]any{
 		"success": {
 			"target":             "all",
@@ -113,7 +113,6 @@ func TestList(t *testing.T) {
 			}
 
 			result := map[string][]interface{}{}
-			fmt.Println(rec.Body.String())
 			err = json.Unmarshal(rec.Body.Bytes(), &result)
 			assert.NoError(t, err)
 
@@ -130,7 +129,7 @@ func TestList(t *testing.T) {
 	}
 }
 
-func TestCreate(t *testing.T) {
+func TestRoomCreate(t *testing.T) {
 	expected := map[string]map[string]any{
 		"success": {
 			"status": 200,
@@ -223,7 +222,7 @@ func TestCreate(t *testing.T) {
 	}
 }
 
-func TestJoin(t *testing.T) {
+func TestRoomJoin(t *testing.T) {
 	expected := map[string]map[string]any{
 		"success": {
 			"status":              200,
