@@ -99,8 +99,41 @@ func (h *MessageHandler) Send(c echo.Context) error {
 	})
 }
 
+type ReadMessageRequest struct {
+	MessageIds []string `json:"message_ids" form:"message_ids" validate:"required"`
+}
+
 func (h *MessageHandler) Read(c echo.Context) error {
-	return nil
+	var req ReadMessageRequest
+	if err := h.validateRequest(c, &req); err != nil {
+		fmt.Println("Validation error:", err)
+		return c.JSON(400, echo.Map{
+			"error": err.Error(),
+		})
+	}
+
+	roomID := c.Param("room_id")
+	uuid := h.GetUuid(c)
+	messageIDs := req.MessageIds
+
+	if err := h.roomSvc.IsJoinedRoom(roomID, uuid); err != nil {
+		fmt.Println("User is not a member of the room:", err)
+		return c.JSON(500, echo.Map{
+			"error": err.Error(),
+		})
+	}
+
+	fmt.Println("Marking messages as read:", messageIDs, "for user:", uuid, "in room:", roomID)
+	if err := h.messageSvc.ReadMessages(messageIDs, roomID, uuid); err != nil {
+		fmt.Println("Failed to mark messages as read:", err)
+		return c.JSON(500, echo.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return c.JSON(200, echo.Map{
+		"status": "success",
+	})
 }
 
 func (h *MessageHandler) Delete(c echo.Context) error {

@@ -269,3 +269,123 @@ func TestMessageSend(t *testing.T) {
 		})
 	}
 }
+
+func TestMessageRead(t *testing.T) {
+	expected := map[string]map[string]any{
+		"success": {
+			"status": 200,
+			"body": map[string]interface{}{
+				"message_ids": []string{"msgid1", "msgid2"},
+			},
+			"IsJoinedRoomCalled":  1,
+			"IsJoinedRoomSuccess": true,
+			"ReadMessagesCalled":  1,
+			"ReadMessagesSuccess": true,
+		},
+		"validation error (missing message_ids)": {
+			"status":              400,
+			"body":                map[string]interface{}{},
+			"IsJoinedRoomCalled":  0,
+			"IsJoinedRoomSuccess": true,
+			"ReadMessagesCalled":  0,
+			"ReadMessagesSuccess": true,
+		},
+		"failure to check joined room": {
+			"status": 500,
+			"body": map[string]interface{}{
+				"message_ids": []string{"msgid1", "msgid2"},
+			},
+			"IsJoinedRoomCalled":  1,
+			"IsJoinedRoomSuccess": false,
+			"ReadMessagesCalled":  0,
+			"ReadMessagesSuccess": true,
+		},
+		"failure to read messages": {
+			"status": 500,
+			"body": map[string]interface{}{
+				"message_ids": []string{"msgid1", "msgid2"},
+			},
+			"IsJoinedRoomCalled":  1,
+			"IsJoinedRoomSuccess": true,
+			"ReadMessagesCalled":  1,
+			"ReadMessagesSuccess": false,
+		},
+	}
+
+	for name, expect := range expected {
+		t.Run(name, func(t *testing.T) {
+			e := echo.New()
+			e.Validator = &usecase.CustomValidator{Validator: validator.New()}
+
+			body := expect["body"].(map[string]interface{})
+			jsonBody, _ := json.Marshal(body)
+			reqBody := strings.NewReader(string(jsonBody))
+			req := httptest.NewRequest(http.MethodPost, "/message/:room_id/read", reqBody)
+
+			req.Header.Set("Content-Type", "application/json")
+			rec := httptest.NewRecorder()
+			c := e.NewContext(req, rec)
+
+			c.SetParamNames("room_id")
+			c.SetParamValues("test-room-id")
+			c.Set("uuid", "test-uuid-1234")
+
+			dto := dto.NewMessageDtoStruct()
+			roomSvcMock := new(svc_mock.RoomSvcMock)
+			messageSvcMock := new(svc_mock.MessageSvcMock)
+
+			var isJoinedErr error = nil
+			if !expect["IsJoinedRoomSuccess"].(bool) {
+				isJoinedErr = assert.AnError
+			}
+
+			var readMessagesErr error = nil
+			if !expect["ReadMessagesSuccess"].(bool) {
+				readMessagesErr = assert.AnError
+			}
+
+			if expect["IsJoinedRoomCalled"].(int) > 0 {
+				roomSvcMock.
+					On("IsJoinedRoom", "test-room-id", "test-uuid-1234").
+					Return(isJoinedErr).
+					Times(expect["IsJoinedRoomCalled"].(int))
+			}
+
+			if expect["ReadMessagesCalled"].(int) > 0 {
+				messageSvcMock.
+					On("ReadMessages", []string{"msgid1", "msgid2"}, "test-room-id", "test-uuid-1234").
+					Return(readMessagesErr).
+					Times(expect["ReadMessagesCalled"].(int))
+			}
+
+			handler := NewMessageHandler(messageSvcMock, roomSvcMock, dto)
+			err := handler.Read(c)
+
+			assert.NoError(t, err)
+
+			assert.Equal(t, expect["status"].(int), rec.Code)
+
+			if expect["IsJoinedRoomCalled"].(int) > 0 {
+				roomSvcMock.AssertExpectations(t)
+			} else {
+				roomSvcMock.AssertNotCalled(t, "IsJoinedRoom")
+			}
+
+			if expect["ReadMessagesCalled"].(int) > 0 {
+				messageSvcMock.AssertExpectations(t)
+			} else {
+				messageSvcMock.AssertNotCalled(t, "ReadMessages")
+			}
+
+			if expect["status"].(int) != http.StatusOK {
+				return
+			}
+
+			result := map[string]interface{}{}
+			err = json.Unmarshal(rec.Body.Bytes(), &result)
+			assert.NoError(t, err)
+
+			assert.Equal(t, "success", result["status"])
+		})
+	}
+}

@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func TestNewMessageSvcStruct(t *testing.T) {
@@ -139,6 +140,64 @@ func TestGetMessageList(t *testing.T) {
 
 				if tt.returnErr {
 					return
+				}
+
+				if m, ok := mongoConnectionStructMock.(interface{ AssertExpectations(*testing.T) }); ok {
+					m.AssertExpectations(t)
+				}
+			})
+		}
+	})
+}
+
+func TestReadMessages(t *testing.T) {
+	funcs.WithEnvMap(mongoSvcEnvs, t, func() {
+		tests := []struct {
+			name                string
+			id                  string
+			initErr             bool
+			updateManyCallCount int
+			updateManyErr       bool
+			returnErr           bool
+		}{
+			{"success", "60c72b2f9b1d4c3d88f0e6b1", false, 1, false, false},
+			{"ObjectIDFromHex_error", "invalid_id", false, 0, false, true},
+			{"initErr", "60c72b2f9b1d4c3d88f0e6b1", true, 0, false, true},
+			{"updateone_error", "60c72b2f9b1d4c3d88f0e6b1", false, 1, true, true},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				mongoCollectionMock := new(atylabmongo.MongoCollectionStructMock)
+				mongoDatabaseMock := new(atylabmongo.MongoDatabaseStructMock)
+
+				if tt.updateManyCallCount > 0 {
+					if tt.updateManyErr {
+						mongoCollectionMock.On("UpdateMany", mock.Anything, mock.Anything, mock.Anything).Return(&mongo.UpdateResult{}, assert.AnError)
+					} else {
+						mongoCollectionMock.On("UpdateMany", mock.Anything, mock.Anything, mock.Anything).Return(&mongo.UpdateResult{}, nil)
+					}
+				}
+
+				mongoDatabaseMock.On("Collection", "messages").Return(mongoCollectionMock)
+
+				mongoConnectorStruct := &atylabmongo.MongoConnector{
+					Db:     mongoDatabaseMock,
+					Ctx:    context.TODO(),
+					Cancel: func() {},
+				}
+
+				mongoConnectionStructMock := setupInitMock(tt.initErr, mongoConnectorStruct)
+				mongoUseCase := usecase.NewMongoUseCaseStruct(mongoConnectionStructMock)
+				messageSvc := NewMessageSvcStruct(mongoUseCase)
+
+				messageIds := []string{"60c72b2f9b1d4c3d88f0e6b1", tt.id}
+				roomId := "room1"
+				userId := "user1"
+
+				err := messageSvc.ReadMessages(messageIds, roomId, userId)
+				if (err != nil) != tt.returnErr {
+					t.Errorf("ReadMessages() [%s] error = %v, wantErr %v", tt.name, err, tt.returnErr)
 				}
 
 				if m, ok := mongoConnectionStructMock.(interface{ AssertExpectations(*testing.T) }); ok {

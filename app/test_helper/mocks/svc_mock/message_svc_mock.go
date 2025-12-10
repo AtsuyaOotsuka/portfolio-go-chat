@@ -17,3 +17,8 @@ func (m *MessageSvcMock) GetMessageList(roomID string) ([]model.Message, error) 
 	args := m.Called(roomID)
 	return args.Get(0).([]model.Message), args.Error(1)
 }
+
+func (m *MessageSvcMock) ReadMessages(messageIds []string, roomId string, userId string) error {
+	args := m.Called(messageIds, roomId, userId)
+	return args.Error(0)
+}

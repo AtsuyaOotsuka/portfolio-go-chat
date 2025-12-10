@@ -14,12 +14,13 @@ func NewMessageDtoStruct() *MessageDtoStruct {
 }
 
 type MessageResponse struct {
-	ID        string `json:"ID"`
-	RoomID    string `json:"RoomID"`
-	Sender    string `json:"Sender"`
-	Message   string `json:"Message"`
-	CreatedAt string `json:"CreatedAt"`
-	IsRead    bool   `json:"IsRead"`
+	ID        string   `json:"ID"`
+	RoomID    string   `json:"RoomID"`
+	Sender    string   `json:"Sender"`
+	Message   string   `json:"Message"`
+	CreatedAt string   `json:"CreatedAt"`
+	IsRead    bool     `json:"IsRead"`
+	Readers   []string `json:"Readers"`
 }
 
 func (d *MessageDtoStruct) GetMessageInfo(message model.Message, userId string) MessageResponse {
@@ -38,6 +39,7 @@ func (d *MessageDtoStruct) GetMessageInfo(message model.Message, userId string) 
 		Message:   message.Message,
 		CreatedAt: message.CreatedAt.String(),
 		IsRead:    isRead,
+		Readers:   message.IsReadUserIds,
 	}
 }
 

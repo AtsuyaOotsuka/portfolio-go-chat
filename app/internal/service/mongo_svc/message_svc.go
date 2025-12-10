@@ -6,11 +6,13 @@ import (
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/model"
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/usecase"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type MessageSvcInterface interface {
 	SendMessage(message model.Message) (string, error)
 	GetMessageList(roomID string) ([]model.Message, error)
+	ReadMessages(messageIds []string, roomId string, userId string) error
 }
 
 type MessageSvcStruct struct {
@@ -72,4 +74,40 @@ func (s *MessageSvcStruct) GetMessageList(roomID string) ([]model.Message, error
 	}
 
 	return messages, nil
+}
+
+func (s *MessageSvcStruct) ReadMessages(messageIds []string, roomId string, userId string) error {
+	mongo, err := s.mongo.MongoInit()
+	if err != nil {
+		fmt.Println("Failed to initialize MongoDB:", err)
+		return err
+	}
+	defer mongo.MongoConnector.Cancel()
+
+	collection := mongo.MongoConnector.Db.Collection("messages")
+	var chatObjectIDs []primitive.ObjectID
+	for _, id := range messageIds {
+		fmt.Println("Processing message ID:", id)
+		chatObjectID, err := primitive.ObjectIDFromHex(id)
+		if err != nil {
+			return err
+		}
+		chatObjectIDs = append(chatObjectIDs, chatObjectID)
+	}
+
+	filter := bson.M{
+		"_id":    bson.M{"$in": chatObjectIDs},
+		"roomid": roomId,
+	}
+
+	update := bson.M{
+		"$addToSet": bson.M{"isReadUserIds": userId},
+	}
+
+	_, err = collection.UpdateMany(mongo.MongoConnector.Ctx, filter, update)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -8,9 +8,9 @@ import (
 
 type Message struct {
 	ID            primitive.ObjectID `bson:"_id,omitempty"`
-	RoomID        string
-	Sender        string
-	Message       string
-	CreatedAt     time.Time
-	IsReadUserIds []string
+	RoomID        string             `bson:"roomid"`
+	Sender        string             `bson:"sender"`
+	Message       string             `bson:"message"`
+	CreatedAt     time.Time          `bson:"createdAt"`
+	IsReadUserIds []string           `bson:"isReadUserIds"`
 }
