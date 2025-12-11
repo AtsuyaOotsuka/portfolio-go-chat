@@ -13,6 +13,8 @@ type MessageSvcInterface interface {
 	SendMessage(message model.Message) (string, error)
 	GetMessageList(roomID string) ([]model.Message, error)
 	ReadMessages(messageIds []string, roomId string, userId string) error
+	IsSender(messageID string, roomID string, userID string) error
+	DeleteMessage(messageID string, roomID string) error
 }
 
 type MessageSvcStruct struct {
@@ -105,6 +107,58 @@ func (s *MessageSvcStruct) ReadMessages(messageIds []string, roomId string, user
 	}
 
 	_, err = collection.UpdateMany(mongo.MongoConnector.Ctx, filter, update)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *MessageSvcStruct) IsSender(messageID string, roomID string, userID string) error {
+	mongo, err := s.mongo.MongoInit()
+	if err != nil {
+		fmt.Println("Failed to initialize MongoDB:", err)
+		return err
+	}
+	defer mongo.MongoConnector.Cancel()
+
+	collection := mongo.MongoConnector.Db.Collection("messages")
+	messageObjectID, err := primitive.ObjectIDFromHex(messageID)
+	if err != nil {
+		return err
+	}
+
+	filter := bson.M{
+		"_id":    messageObjectID,
+		"roomid": roomID,
+		"sender": userID,
+	}
+
+	var result model.Message
+	err = collection.FindOne(mongo.MongoConnector.Ctx, filter, &result)
+	if err != nil {
+		fmt.Println("User is not the sender of the message:", err)
+		return err
+	}
+
+	return nil
+}
+
+func (s *MessageSvcStruct) DeleteMessage(messageID string, roomID string) error {
+	mongo, err := s.mongo.MongoInit()
+	if err != nil {
+		fmt.Println("Failed to initialize MongoDB:", err)
+		return err
+	}
+	defer mongo.MongoConnector.Cancel()
+
+	collection := mongo.MongoConnector.Db.Collection("messages")
+	messageObjectID, err := primitive.ObjectIDFromHex(messageID)
+	if err != nil {
+		return err
+	}
+
+	_, err = collection.DeleteOne(mongo.MongoConnector.Ctx, bson.M{"_id": messageObjectID, "roomid": roomID})
 	if err != nil {
 		return err
 	}

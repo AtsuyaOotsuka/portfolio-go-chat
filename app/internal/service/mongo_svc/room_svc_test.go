@@ -333,3 +333,63 @@ func TestIsJoinedRoom(t *testing.T) {
 		}
 	})
 }
+
+func TestIsRoomOwner(t *testing.T) {
+	funcs.WithEnvMap(mongoSvcEnvs, t, func() {
+		tests := []struct {
+			name       string
+			initErr    bool
+			request    string
+			findOneErr bool
+			returnErr  bool
+		}{
+			{"success", false, "64a7b2f4e13e4c3f9c8b4567", false, false},
+			{"error", true, "64a7b2f4e13e4c3f9c8b4567", false, true},
+			{"invalid_id", false, "invalid_object_id", false, true},
+			{"findone_error", false, "64a7b2f4e13e4c3f9c8b4567", true, true},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				mongoCollectionMock := new(atylabmongo.MongoCollectionStructMock)
+				var room model.Room
+				if tt.findOneErr {
+					mongoCollectionMock.On("FindOne", mock.Anything, mock.Anything, &room).Return(assert.AnError)
+				} else {
+					mongoCollectionMock.On("FindOne", mock.Anything, mock.Anything, &room).Return(nil)
+				}
+
+				mongoDatabaseMock := new(atylabmongo.MongoDatabaseStructMock)
+				mongoDatabaseMock.On("Collection", "rooms").Return(mongoCollectionMock)
+
+				mongoConnectorStruct := &atylabmongo.MongoConnector{
+					Db:     mongoDatabaseMock,
+					Ctx:    context.TODO(),
+					Cancel: func() {},
+				}
+				if tt.initErr {
+					mongoConnectorStruct = nil
+				}
+
+				mongoConnectionStructMock := setupInitMock(tt.initErr, mongoConnectorStruct)
+
+				mongoUseCase := usecase.NewMongoUseCaseStruct(mongoConnectionStructMock)
+
+				roomSvc := NewRoomSvcStruct(mongoUseCase)
+
+				err := roomSvc.IsRoomOwner(tt.request, "user123")
+				if (err != nil) != tt.returnErr {
+					t.Errorf("IsRoomOwner() [%s] error = %v, initErr %v", tt.name, err, tt.initErr)
+				}
+
+				if tt.returnErr {
+					return
+				}
+
+				if m, ok := mongoConnectionStructMock.(interface{ AssertExpectations(*testing.T) }); ok {
+					m.AssertExpectations(t)
+				}
+			})
+		}
+	})
+}

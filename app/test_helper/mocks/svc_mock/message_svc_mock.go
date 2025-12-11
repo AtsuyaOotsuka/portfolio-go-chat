@@ -22,3 +22,13 @@ func (m *MessageSvcMock) ReadMessages(messageIds []string, roomId string, userId
 	args := m.Called(messageIds, roomId, userId)
 	return args.Error(0)
 }
+
+func (m *MessageSvcMock) IsSender(messageID string, roomID string, userID string) error {
+	args := m.Called(messageID, roomID, userID)
+	return args.Error(0)
+}
+
+func (m *MessageSvcMock) DeleteMessage(messageID string, roomID string) error {
+	args := m.Called(messageID, roomID)
+	return args.Error(0)
+}

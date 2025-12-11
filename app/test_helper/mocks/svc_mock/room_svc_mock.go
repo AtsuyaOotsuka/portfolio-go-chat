@@ -33,3 +33,8 @@ func (m *RoomSvcMock) IsJoinedRoom(roomID string, uuid string) error {
 	args := m.Called(roomID, uuid)
 	return args.Error(0)
 }
+
+func (m *RoomSvcMock) IsRoomOwner(roomID string, uuid string) error {
+	args := m.Called(roomID, uuid)
+	return args.Error(0)
+}
