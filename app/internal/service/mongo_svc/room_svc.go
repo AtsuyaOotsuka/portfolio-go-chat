@@ -5,17 +5,18 @@ import (
 
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/model"
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/usecase"
+	"github.com/AtsuyaOotsuka/portfolio-go-chat/public_lib/atylabmongo"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type RoomSvcInterface interface {
-	GetRoomList(uuid string, target string) ([]model.Room, error)
-	CreateRoom(room model.Room) (string, error)
-	GetRoomByID(roomID string) (model.Room, error)
-	JoinRoom(roomID string, uuid string) error
-	IsJoinedRoom(roomID string, uuid string) error
-	IsRoomOwner(roomID string, uuid string) error
+	GetRoomList(uuid string, target string, ctx *atylabmongo.MongoCtxSvc) ([]model.Room, error)
+	CreateRoom(room model.Room, ctx *atylabmongo.MongoCtxSvc) (string, error)
+	GetRoomByID(roomID string, ctx *atylabmongo.MongoCtxSvc) (model.Room, error)
+	JoinRoom(roomID string, uuid string, ctx *atylabmongo.MongoCtxSvc) error
+	IsJoinedRoom(roomID string, uuid string, ctx *atylabmongo.MongoCtxSvc) error
+	IsRoomOwner(roomID string, uuid string, ctx *atylabmongo.MongoCtxSvc) error
 }
 
 type RoomSvcStruct struct {
@@ -30,7 +31,7 @@ func NewRoomSvcStruct(
 	}
 }
 
-func (s *RoomSvcStruct) GetRoomList(uuid string, target string) ([]model.Room, error) {
+func (s *RoomSvcStruct) GetRoomList(uuid string, target string, ctx *atylabmongo.MongoCtxSvc) ([]model.Room, error) {
 	var filter bson.M
 	switch target {
 	case "all":
@@ -52,19 +53,17 @@ func (s *RoomSvcStruct) GetRoomList(uuid string, target string) ([]model.Room, e
 		return []model.Room{}, err
 	}
 
-	defer mongo.MongoConnector.Cancel()
-
 	collection := mongo.MongoConnector.Db.Collection("rooms")
 
-	cursor, err := collection.Find(mongo.MongoConnector.Ctx, filter)
+	cursor, err := collection.Find(ctx.Ctx, filter)
 	if err != nil {
 		fmt.Println("Failed to find rooms:", err)
 		return []model.Room{}, err
 	}
-	defer cursor.Close(mongo.MongoConnector.Ctx)
+	defer cursor.Close(ctx.Ctx)
 
 	var rooms []model.Room
-	for cursor.Next(mongo.MongoConnector.Ctx) {
+	for cursor.Next(ctx.Ctx) {
 		var room model.Room
 		if err := cursor.Decode(&room); err != nil {
 			fmt.Println("Failed to decode room:", err)
@@ -76,18 +75,16 @@ func (s *RoomSvcStruct) GetRoomList(uuid string, target string) ([]model.Room, e
 	return rooms, nil
 }
 
-func (s *RoomSvcStruct) CreateRoom(room model.Room) (string, error) {
+func (s *RoomSvcStruct) CreateRoom(room model.Room, ctx *atylabmongo.MongoCtxSvc) (string, error) {
 	mongo, err := s.mongo.MongoInit()
 	if err != nil {
 		fmt.Println("Failed to initialize MongoDB:", err)
 		return "", err
 	}
 
-	defer mongo.MongoConnector.Cancel()
-
 	collection := mongo.MongoConnector.Db.Collection("rooms")
 
-	InsertedID, err := collection.InsertOne(mongo.MongoConnector.Ctx, room)
+	InsertedID, err := collection.InsertOne(ctx.Ctx, room)
 	if err != nil {
 		return "", err
 	}
@@ -95,15 +92,13 @@ func (s *RoomSvcStruct) CreateRoom(room model.Room) (string, error) {
 	return InsertedID, nil
 }
 
-func (s *RoomSvcStruct) GetRoomByID(roomID string) (model.Room, error) {
+func (s *RoomSvcStruct) GetRoomByID(roomID string, ctx *atylabmongo.MongoCtxSvc) (model.Room, error) {
 	var err error
 	mongo, err := s.mongo.MongoInit()
 	if err != nil {
 		fmt.Println("Failed to initialize MongoDB:", err)
 		return model.Room{}, err
 	}
-
-	defer mongo.MongoConnector.Cancel()
 
 	collection := mongo.MongoConnector.Db.Collection("rooms")
 
@@ -113,7 +108,7 @@ func (s *RoomSvcStruct) GetRoomByID(roomID string) (model.Room, error) {
 	}
 
 	var room model.Room
-	err = collection.FindOne(mongo.MongoConnector.Ctx, bson.M{"_id": id}, &room)
+	err = collection.FindOne(ctx.Ctx, bson.M{"_id": id}, &room)
 	if err != nil {
 		return model.Room{}, err
 	}
@@ -122,13 +117,12 @@ func (s *RoomSvcStruct) GetRoomByID(roomID string) (model.Room, error) {
 
 }
 
-func (s *RoomSvcStruct) JoinRoom(roomID string, uuid string) error {
+func (s *RoomSvcStruct) JoinRoom(roomID string, uuid string, ctx *atylabmongo.MongoCtxSvc) error {
 	mongo, err := s.mongo.MongoInit()
 	if err != nil {
 		fmt.Println("Failed to initialize MongoDB:", err)
 		return err
 	}
-	defer mongo.MongoConnector.Cancel()
 
 	id, err := primitive.ObjectIDFromHex(roomID)
 	if err != nil {
@@ -138,7 +132,7 @@ func (s *RoomSvcStruct) JoinRoom(roomID string, uuid string) error {
 	collection := mongo.MongoConnector.Db.Collection("rooms")
 
 	_, err = collection.UpdateOne(
-		mongo.MongoConnector.Ctx,
+		ctx.Ctx,
 		bson.M{"_id": id},
 		bson.M{"$addToSet": bson.M{"members": uuid}},
 	)
@@ -149,14 +143,12 @@ func (s *RoomSvcStruct) JoinRoom(roomID string, uuid string) error {
 	return nil
 }
 
-func (s *RoomSvcStruct) IsJoinedRoom(roomID string, uuid string) error {
+func (s *RoomSvcStruct) IsJoinedRoom(roomID string, uuid string, ctx *atylabmongo.MongoCtxSvc) error {
 	mongo, err := s.mongo.MongoInit()
 	if err != nil {
 		fmt.Println("Failed to initialize MongoDB:", err)
 		return err
 	}
-
-	defer mongo.MongoConnector.Cancel()
 
 	collection := mongo.MongoConnector.Db.Collection("rooms")
 
@@ -166,7 +158,7 @@ func (s *RoomSvcStruct) IsJoinedRoom(roomID string, uuid string) error {
 	}
 
 	var room model.Room
-	err = collection.FindOne(mongo.MongoConnector.Ctx, bson.M{
+	err = collection.FindOne(ctx.Ctx, bson.M{
 		"_id":     id,
 		"members": uuid,
 	}, &room)
@@ -177,14 +169,12 @@ func (s *RoomSvcStruct) IsJoinedRoom(roomID string, uuid string) error {
 	return nil
 }
 
-func (s *RoomSvcStruct) IsRoomOwner(roomID string, uuid string) error {
+func (s *RoomSvcStruct) IsRoomOwner(roomID string, uuid string, ctx *atylabmongo.MongoCtxSvc) error {
 	mongo, err := s.mongo.MongoInit()
 	if err != nil {
 		fmt.Println("Failed to initialize MongoDB:", err)
 		return err
 	}
-
-	defer mongo.MongoConnector.Cancel()
 
 	collection := mongo.MongoConnector.Db.Collection("rooms")
 
@@ -199,7 +189,7 @@ func (s *RoomSvcStruct) IsRoomOwner(roomID string, uuid string) error {
 	}
 
 	var room model.Room
-	err = collection.FindOne(mongo.MongoConnector.Ctx, filter, &room)
+	err = collection.FindOne(ctx.Ctx, filter, &room)
 	if err != nil {
 		return err
 	}

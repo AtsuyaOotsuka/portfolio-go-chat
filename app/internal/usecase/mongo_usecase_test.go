@@ -10,9 +10,11 @@ import (
 
 func TestNewMongoUseCaseStruct(t *testing.T) {
 	mockMongoConnectorPkg := &atylabmongo.MongoConnectionStruct{}
+	mongo := NewMongo()
 
 	mongoUseCase := NewMongoUseCaseStruct(
 		mockMongoConnectorPkg,
+		mongo,
 	)
 
 	if mongoUseCase.mongoConnectorPkg != mockMongoConnectorPkg {
@@ -57,6 +59,7 @@ func TestMongoInit(t *testing.T) {
 
 		mongoUseCase := NewMongoUseCaseStruct(
 			mockMongoConnectorPkg,
+			NewMongo(),
 		)
 
 		mongo, err := mongoUseCase.MongoInit()
@@ -69,6 +72,27 @@ func TestMongoInit(t *testing.T) {
 	})
 }
 
+func TestMongoInitAlreadyConnected(t *testing.T) {
+	funcs.WithEnvMap(mongoSvcEnvs, t, func() {
+		mockMongoConnectorPkg := &atylabmongo.MongoConnectionStructMock{}
+
+		mongoUseCase := NewMongoUseCaseStruct(
+			mockMongoConnectorPkg,
+			&Mongo{
+				IsConnected: true,
+			},
+		)
+
+		mongo, err := mongoUseCase.MongoInit()
+		if err != nil {
+			t.Fatalf("Expected no error, got %v", err)
+		}
+		if mongo.IsConnected != true {
+			t.Errorf("Expected IsConnected to be true")
+		}
+	})
+}
+
 func TestMongoInitNewMongoConnectError(t *testing.T) {
 	funcs.WithEnvMap(mongoSvcEnvs, t, func() {
 		mockMongoConnectorPkg := &atylabmongo.MongoConnectionStructMock{}
@@ -76,6 +100,7 @@ func TestMongoInitNewMongoConnectError(t *testing.T) {
 
 		mongoUseCase := NewMongoUseCaseStruct(
 			mockMongoConnectorPkg,
+			NewMongo(),
 		)
 
 		mongo, err := mongoUseCase.MongoInit()
@@ -92,6 +117,7 @@ func TestMongoInitNotEnv(t *testing.T) {
 	mockMongoConnectorPkg := &atylabmongo.MongoConnectionStructMock{}
 	mongoUseCase := NewMongoUseCaseStruct(
 		mockMongoConnectorPkg,
+		NewMongo(),
 	)
 
 	_, err := mongoUseCase.MongoInit()

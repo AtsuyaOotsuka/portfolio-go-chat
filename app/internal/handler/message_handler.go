@@ -7,6 +7,7 @@ import (
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/dto"
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/model"
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/service/mongo_svc"
+	"github.com/AtsuyaOotsuka/portfolio-go-chat/public_lib/atylabmongo"
 	"github.com/labstack/echo/v4"
 )
 
@@ -37,16 +38,19 @@ func NewMessageHandler(
 }
 
 func (h *MessageHandler) List(c echo.Context) error {
+	ctx := atylabmongo.NewMongoCtxSvc()
+	defer ctx.Cancel()
+
 	roomID := c.Param("room_id")
 	uuid := h.GetUuid(c)
 
-	if err := h.roomSvc.IsJoinedRoom(roomID, uuid); err != nil {
+	if err := h.roomSvc.IsJoinedRoom(roomID, uuid, ctx); err != nil {
 		return c.JSON(500, echo.Map{
 			"error": err.Error(),
 		})
 	}
 
-	messages, err := h.messageSvc.GetMessageList(roomID)
+	messages, err := h.messageSvc.GetMessageList(roomID, ctx)
 	if err != nil {
 		return c.JSON(500, echo.Map{
 			"error": err.Error(),
@@ -71,10 +75,13 @@ func (h *MessageHandler) Send(c echo.Context) error {
 		})
 	}
 
+	ctx := atylabmongo.NewMongoCtxSvc()
+	defer ctx.Cancel()
+
 	roomID := c.Param("room_id")
 	uuid := h.GetUuid(c)
 
-	if err := h.roomSvc.IsJoinedRoom(roomID, uuid); err != nil {
+	if err := h.roomSvc.IsJoinedRoom(roomID, uuid, ctx); err != nil {
 		return c.JSON(500, echo.Map{
 			"error": err.Error(),
 		})
@@ -88,7 +95,7 @@ func (h *MessageHandler) Send(c echo.Context) error {
 		IsReadUserIds: []string{uuid},
 	}
 
-	messageId, err := h.messageSvc.SendMessage(message)
+	messageId, err := h.messageSvc.SendMessage(message, ctx)
 	if err != nil {
 		return c.JSON(500, echo.Map{
 			"error": err.Error(),
@@ -112,11 +119,14 @@ func (h *MessageHandler) Read(c echo.Context) error {
 		})
 	}
 
+	ctx := atylabmongo.NewMongoCtxSvc()
+	defer ctx.Cancel()
+
 	roomID := c.Param("room_id")
 	uuid := h.GetUuid(c)
 	messageIDs := req.MessageIds
 
-	if err := h.roomSvc.IsJoinedRoom(roomID, uuid); err != nil {
+	if err := h.roomSvc.IsJoinedRoom(roomID, uuid, ctx); err != nil {
 		fmt.Println("User is not a member of the room:", err)
 		return c.JSON(500, echo.Map{
 			"error": err.Error(),
@@ -124,7 +134,7 @@ func (h *MessageHandler) Read(c echo.Context) error {
 	}
 
 	fmt.Println("Marking messages as read:", messageIDs, "for user:", uuid, "in room:", roomID)
-	if err := h.messageSvc.ReadMessages(messageIDs, roomID, uuid); err != nil {
+	if err := h.messageSvc.ReadMessages(messageIDs, roomID, uuid, ctx); err != nil {
 		fmt.Println("Failed to mark messages as read:", err)
 		return c.JSON(500, echo.Map{
 			"error": err.Error(),
@@ -149,26 +159,29 @@ func (h *MessageHandler) Delete(c echo.Context) error {
 		})
 	}
 
+	ctx := atylabmongo.NewMongoCtxSvc()
+	defer ctx.Cancel()
+
 	roomID := c.Param("room_id")
 	uuid := h.GetUuid(c)
 	messageID := req.MessageId
 
-	if err := h.roomSvc.IsJoinedRoom(roomID, uuid); err != nil {
+	if err := h.roomSvc.IsJoinedRoom(roomID, uuid, ctx); err != nil {
 		fmt.Println("User is not a member of the room:", err)
 		return c.JSON(500, echo.Map{
 			"error": err.Error(),
 		})
 	}
 
-	if err := h.messageSvc.IsSender(messageID, roomID, uuid); err != nil {
-		if err := h.roomSvc.IsRoomOwner(roomID, uuid); err != nil {
+	if err := h.messageSvc.IsSender(messageID, roomID, uuid, ctx); err != nil {
+		if err := h.roomSvc.IsRoomOwner(roomID, uuid, ctx); err != nil {
 			return c.JSON(403, echo.Map{
 				"error": "You are not authorized to delete this message.",
 			})
 		}
 	}
 
-	if err := h.messageSvc.DeleteMessage(messageID, roomID); err != nil {
+	if err := h.messageSvc.DeleteMessage(messageID, roomID, ctx); err != nil {
 		return c.JSON(500, echo.Map{
 			"error": err.Error(),
 		})

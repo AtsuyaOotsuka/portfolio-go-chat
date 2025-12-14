@@ -11,15 +11,29 @@ type MongoUseCaseInterface interface {
 	MongoInit() (*Mongo, error)
 }
 
+type Mongo struct {
+	MongoConnector *atylabmongo.MongoConnector
+	IsConnected    bool
+}
+
+func NewMongo() *Mongo {
+	return &Mongo{
+		IsConnected: false,
+	}
+}
+
 type MongoUseCaseStruct struct {
 	mongoConnectorPkg atylabmongo.MongoConnectorInterface
+	mongo             *Mongo
 }
 
 func NewMongoUseCaseStruct(
 	mongoConnectorPkg atylabmongo.MongoConnectorInterface,
+	mongo *Mongo,
 ) *MongoUseCaseStruct {
 	return &MongoUseCaseStruct{
 		mongoConnectorPkg: mongoConnectorPkg,
+		mongo:             mongo,
 	}
 }
 
@@ -35,11 +49,11 @@ func makeUri() (string, error) {
 	return "", fmt.Errorf("incomplete MongoDB connection information")
 }
 
-type Mongo struct {
-	MongoConnector *atylabmongo.MongoConnector
-}
-
 func (s *MongoUseCaseStruct) MongoInit() (*Mongo, error) {
+	if s.mongo != nil && s.mongo.IsConnected {
+		return s.mongo, nil
+	}
+
 	uri, err := makeUri()
 	fmt.Println("MongoDB URI:", uri)
 	if err != nil {
@@ -51,8 +65,9 @@ func (s *MongoUseCaseStruct) MongoInit() (*Mongo, error) {
 		return &Mongo{}, err
 	}
 
-	mongo := &Mongo{
+	s.mongo = &Mongo{
 		MongoConnector: mongoConnector,
+		IsConnected:    true,
 	}
-	return mongo, nil
+	return s.mongo, nil
 }

@@ -1,7 +1,6 @@
 package mongo_svc
 
 import (
-	"context"
 	"testing"
 
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/model"
@@ -15,7 +14,7 @@ import (
 )
 
 func TestNewMessageSvcStruct(t *testing.T) {
-	atylabMongo := usecase.NewMongoUseCaseStruct(atylabmongo.NewMongoConnectionStruct())
+	atylabMongo := usecase.NewMongoUseCaseStruct(atylabmongo.NewMongoConnectionStruct(), usecase.NewMongo())
 	svc := NewMessageSvcStruct(atylabMongo)
 	if svc == nil {
 		t.Error("expected non-nil MessageSvcStruct")
@@ -48,13 +47,11 @@ func TestSendMessage(t *testing.T) {
 				mongoDatabaseMock.On("Collection", "messages").Return(mongoCollectionMock)
 
 				mongoConnectorStruct := &atylabmongo.MongoConnector{
-					Db:     mongoDatabaseMock,
-					Ctx:    context.TODO(),
-					Cancel: func() {},
+					Db: mongoDatabaseMock,
 				}
 
 				mongoConnectionStructMock := setupInitMock(tt.initErr, mongoConnectorStruct)
-				mongoUseCase := usecase.NewMongoUseCaseStruct(mongoConnectionStructMock)
+				mongoUseCase := usecase.NewMongoUseCaseStruct(mongoConnectionStructMock, usecase.NewMongo())
 				messageSvc := NewMessageSvcStruct(mongoUseCase)
 
 				message := model.Message{
@@ -63,7 +60,7 @@ func TestSendMessage(t *testing.T) {
 					Message: "Hello, World!",
 				}
 
-				messageID, err := messageSvc.SendMessage(message)
+				messageID, err := messageSvc.SendMessage(message, atylabmongo.NewMongoCtxSvc())
 				if (err != nil) != tt.initErr && (err != nil) != tt.InsertOneErr {
 					t.Errorf("CreateRoom() [%s] error = %v, wantErr %v", tt.name, err, tt.initErr)
 				}
@@ -118,19 +115,17 @@ func TestGetMessageList(t *testing.T) {
 				mongoDatabaseMock.On("Collection", "messages").Return(mongoCollectionMock)
 
 				mongoConnectorStruct := &atylabmongo.MongoConnector{
-					Db:     mongoDatabaseMock,
-					Ctx:    context.TODO(),
-					Cancel: func() {},
+					Db: mongoDatabaseMock,
 				}
 				if tt.initErr {
 					mongoConnectorStruct = nil
 				}
 
 				mongoConnectionStructMock := setupInitMock(tt.initErr, mongoConnectorStruct)
-				mongoUseCase := usecase.NewMongoUseCaseStruct(mongoConnectionStructMock)
+				mongoUseCase := usecase.NewMongoUseCaseStruct(mongoConnectionStructMock, usecase.NewMongo())
 				messageSvc := NewMessageSvcStruct(mongoUseCase)
 
-				messages, err := messageSvc.GetMessageList("room1")
+				messages, err := messageSvc.GetMessageList("room1", atylabmongo.NewMongoCtxSvc())
 				if (err != nil) != tt.returnErr {
 					t.Errorf("GetMessageList() [%s] error = %v, initErr %v", tt.name, err, tt.initErr)
 				}
@@ -182,20 +177,18 @@ func TestReadMessages(t *testing.T) {
 				mongoDatabaseMock.On("Collection", "messages").Return(mongoCollectionMock)
 
 				mongoConnectorStruct := &atylabmongo.MongoConnector{
-					Db:     mongoDatabaseMock,
-					Ctx:    context.TODO(),
-					Cancel: func() {},
+					Db: mongoDatabaseMock,
 				}
 
 				mongoConnectionStructMock := setupInitMock(tt.initErr, mongoConnectorStruct)
-				mongoUseCase := usecase.NewMongoUseCaseStruct(mongoConnectionStructMock)
+				mongoUseCase := usecase.NewMongoUseCaseStruct(mongoConnectionStructMock, usecase.NewMongo())
 				messageSvc := NewMessageSvcStruct(mongoUseCase)
 
 				messageIds := []string{"60c72b2f9b1d4c3d88f0e6b1", tt.id}
 				roomId := "room1"
 				userId := "user1"
 
-				err := messageSvc.ReadMessages(messageIds, roomId, userId)
+				err := messageSvc.ReadMessages(messageIds, roomId, userId, atylabmongo.NewMongoCtxSvc())
 				if (err != nil) != tt.returnErr {
 					t.Errorf("ReadMessages() [%s] error = %v, wantErr %v", tt.name, err, tt.returnErr)
 				}
@@ -240,16 +233,14 @@ func TestIsSender(t *testing.T) {
 				mongoDatabaseMock.On("Collection", "messages").Return(mongoCollectionMock)
 
 				mongoConnectorStruct := &atylabmongo.MongoConnector{
-					Db:     mongoDatabaseMock,
-					Ctx:    context.TODO(),
-					Cancel: func() {},
+					Db: mongoDatabaseMock,
 				}
 
 				mongoConnectionStructMock := setupInitMock(tt.initErr, mongoConnectorStruct)
-				mongoUseCase := usecase.NewMongoUseCaseStruct(mongoConnectionStructMock)
+				mongoUseCase := usecase.NewMongoUseCaseStruct(mongoConnectionStructMock, usecase.NewMongo())
 				messageSvc := NewMessageSvcStruct(mongoUseCase)
 
-				err := messageSvc.IsSender(tt.messageID, tt.roomID, tt.userID)
+				err := messageSvc.IsSender(tt.messageID, tt.roomID, tt.userID, atylabmongo.NewMongoCtxSvc())
 				if (err != nil) != tt.returnErr {
 					t.Errorf("IsSender() [%s] error = %v, wantErr %v", tt.name, err, tt.returnErr)
 				}
@@ -292,16 +283,14 @@ func TestDeleteMessage(t *testing.T) {
 				mongoDatabaseMock.On("Collection", "messages").Return(mongoCollectionMock)
 
 				mongoConnectorStruct := &atylabmongo.MongoConnector{
-					Db:     mongoDatabaseMock,
-					Ctx:    context.TODO(),
-					Cancel: func() {},
+					Db: mongoDatabaseMock,
 				}
 
 				mongoConnectionStructMock := setupInitMock(tt.initErr, mongoConnectorStruct)
-				mongoUseCase := usecase.NewMongoUseCaseStruct(mongoConnectionStructMock)
+				mongoUseCase := usecase.NewMongoUseCaseStruct(mongoConnectionStructMock, usecase.NewMongo())
 				messageSvc := NewMessageSvcStruct(mongoUseCase)
 
-				err := messageSvc.DeleteMessage(tt.messageID, tt.roomID)
+				err := messageSvc.DeleteMessage(tt.messageID, tt.roomID, atylabmongo.NewMongoCtxSvc())
 				if (err != nil) != tt.returnErr {
 					t.Errorf("DeleteMessage() [%s] error = %v, wantErr %v", tt.name, err, tt.returnErr)
 				}

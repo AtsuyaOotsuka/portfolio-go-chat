@@ -1,7 +1,6 @@
 package mongo_svc
 
 import (
-	"context"
 	"testing"
 
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/model"
@@ -15,7 +14,7 @@ import (
 )
 
 func TestNewRoomSvcStruct(t *testing.T) {
-	atylabMongo := usecase.NewMongoUseCaseStruct(atylabmongo.NewMongoConnectionStruct())
+	atylabMongo := usecase.NewMongoUseCaseStruct(atylabmongo.NewMongoConnectionStruct(), usecase.NewMongo())
 	svc := NewRoomSvcStruct(atylabMongo)
 	if svc == nil {
 		t.Error("expected non-nil RoomSvcStruct")
@@ -79,9 +78,7 @@ func TestGetRooms(t *testing.T) {
 				mongoDatabaseMock.On("Collection", "rooms").Return(mongoCollectionMock)
 
 				mongoConnectorStruct := &atylabmongo.MongoConnector{
-					Db:     mongoDatabaseMock,
-					Ctx:    context.TODO(),
-					Cancel: func() {},
+					Db: mongoDatabaseMock,
 				}
 				if tt.initErr {
 					mongoConnectorStruct = nil
@@ -89,11 +86,11 @@ func TestGetRooms(t *testing.T) {
 
 				mongoConnectionStructMock := setupInitMock(tt.initErr, mongoConnectorStruct)
 
-				mongoUseCase := usecase.NewMongoUseCaseStruct(mongoConnectionStructMock)
+				mongoUseCase := usecase.NewMongoUseCaseStruct(mongoConnectionStructMock, usecase.NewMongo())
 
 				roomSvc := NewRoomSvcStruct(mongoUseCase)
 
-				rooms, err := roomSvc.GetRoomList("user123", tt.request)
+				rooms, err := roomSvc.GetRoomList("user123", tt.request, atylabmongo.NewMongoCtxSvc())
 				if (err != nil) != tt.returnErr {
 					t.Errorf("GetRooms() [%s] error = %v, initErr %v", tt.name, err, tt.initErr)
 				}
@@ -138,18 +135,16 @@ func TestCreateRoom(t *testing.T) {
 				mongoDatabaseMock.On("Collection", "rooms").Return(mongoCollectionMock)
 
 				mongoConnectorStruct := &atylabmongo.MongoConnector{
-					Db:     mongoDatabaseMock,
-					Ctx:    context.TODO(),
-					Cancel: func() {},
+					Db: mongoDatabaseMock,
 				}
 				mongoConnectionStructMock := setupInitMock(tt.initErr, mongoConnectorStruct)
 
-				mongoUseCase := usecase.NewMongoUseCaseStruct(mongoConnectionStructMock)
+				mongoUseCase := usecase.NewMongoUseCaseStruct(mongoConnectionStructMock, usecase.NewMongo())
 				roomSvc := NewRoomSvcStruct(mongoUseCase)
 
 				room := model.Room{Name: "Test Room"}
 
-				roomId, err := roomSvc.CreateRoom(room)
+				roomId, err := roomSvc.CreateRoom(room, atylabmongo.NewMongoCtxSvc())
 				if (err != nil) != tt.initErr && (err != nil) != tt.InsertOneErr {
 					t.Errorf("CreateRoom() [%s] error = %v, wantErr %v", tt.name, err, tt.initErr)
 				}
@@ -194,9 +189,7 @@ func TestGetRoomByID(t *testing.T) {
 				mongoDatabaseMock.On("Collection", "rooms").Return(mongoCollectionMock)
 
 				mongoConnectorStruct := &atylabmongo.MongoConnector{
-					Db:     mongoDatabaseMock,
-					Ctx:    context.TODO(),
-					Cancel: func() {},
+					Db: mongoDatabaseMock,
 				}
 				if tt.initErr {
 					mongoConnectorStruct = nil
@@ -204,11 +197,11 @@ func TestGetRoomByID(t *testing.T) {
 
 				mongoConnectionStructMock := setupInitMock(tt.initErr, mongoConnectorStruct)
 
-				mongoUseCase := usecase.NewMongoUseCaseStruct(mongoConnectionStructMock)
+				mongoUseCase := usecase.NewMongoUseCaseStruct(mongoConnectionStructMock, usecase.NewMongo())
 
 				roomSvc := NewRoomSvcStruct(mongoUseCase)
 
-				room, err := roomSvc.GetRoomByID(tt.request)
+				room, err := roomSvc.GetRoomByID(tt.request, atylabmongo.NewMongoCtxSvc())
 				if (err != nil) != tt.returnErr {
 					t.Errorf("GetRoomByID() [%s] error = %v, initErr %v", tt.name, err, tt.initErr)
 				}
@@ -253,16 +246,14 @@ func TestJoinRoom(t *testing.T) {
 				mongoDatabaseMock.On("Collection", "rooms").Return(mongoCollectionMock)
 
 				mongoConnectorStruct := &atylabmongo.MongoConnector{
-					Ctx:    context.TODO(),
-					Db:     mongoDatabaseMock,
-					Cancel: func() {},
+					Db: mongoDatabaseMock,
 				}
 				mongoConnectionStructMock := setupInitMock(tt.initErr, mongoConnectorStruct)
 
-				mongoUseCase := usecase.NewMongoUseCaseStruct(mongoConnectionStructMock)
+				mongoUseCase := usecase.NewMongoUseCaseStruct(mongoConnectionStructMock, usecase.NewMongo())
 				roomSvc := NewRoomSvcStruct(mongoUseCase)
 
-				err := roomSvc.JoinRoom(tt.request, "user123")
+				err := roomSvc.JoinRoom(tt.request, "user123", atylabmongo.NewMongoCtxSvc())
 				if (err != nil) != tt.returnErr {
 					t.Errorf("JoinRoom() [%s] error = %v, initErr %v", tt.name, err, tt.initErr)
 				}
@@ -303,9 +294,7 @@ func TestIsJoinedRoom(t *testing.T) {
 				mongoDatabaseMock.On("Collection", "rooms").Return(mongoCollectionMock)
 
 				mongoConnectorStruct := &atylabmongo.MongoConnector{
-					Db:     mongoDatabaseMock,
-					Ctx:    context.TODO(),
-					Cancel: func() {},
+					Db: mongoDatabaseMock,
 				}
 				if tt.initErr {
 					mongoConnectorStruct = nil
@@ -313,11 +302,11 @@ func TestIsJoinedRoom(t *testing.T) {
 
 				mongoConnectionStructMock := setupInitMock(tt.initErr, mongoConnectorStruct)
 
-				mongoUseCase := usecase.NewMongoUseCaseStruct(mongoConnectionStructMock)
+				mongoUseCase := usecase.NewMongoUseCaseStruct(mongoConnectionStructMock, usecase.NewMongo())
 
 				roomSvc := NewRoomSvcStruct(mongoUseCase)
 
-				err := roomSvc.IsJoinedRoom(tt.request, "user123")
+				err := roomSvc.IsJoinedRoom(tt.request, "user123", atylabmongo.NewMongoCtxSvc())
 				if (err != nil) != tt.returnErr {
 					t.Errorf("IsJoinedRoom() [%s] error = %v, initErr %v", tt.name, err, tt.initErr)
 				}
@@ -363,9 +352,7 @@ func TestIsRoomOwner(t *testing.T) {
 				mongoDatabaseMock.On("Collection", "rooms").Return(mongoCollectionMock)
 
 				mongoConnectorStruct := &atylabmongo.MongoConnector{
-					Db:     mongoDatabaseMock,
-					Ctx:    context.TODO(),
-					Cancel: func() {},
+					Db: mongoDatabaseMock,
 				}
 				if tt.initErr {
 					mongoConnectorStruct = nil
@@ -373,11 +360,11 @@ func TestIsRoomOwner(t *testing.T) {
 
 				mongoConnectionStructMock := setupInitMock(tt.initErr, mongoConnectorStruct)
 
-				mongoUseCase := usecase.NewMongoUseCaseStruct(mongoConnectionStructMock)
+				mongoUseCase := usecase.NewMongoUseCaseStruct(mongoConnectionStructMock, usecase.NewMongo())
 
 				roomSvc := NewRoomSvcStruct(mongoUseCase)
 
-				err := roomSvc.IsRoomOwner(tt.request, "user123")
+				err := roomSvc.IsRoomOwner(tt.request, "user123", atylabmongo.NewMongoCtxSvc())
 				if (err != nil) != tt.returnErr {
 					t.Errorf("IsRoomOwner() [%s] error = %v, initErr %v", tt.name, err, tt.initErr)
 				}

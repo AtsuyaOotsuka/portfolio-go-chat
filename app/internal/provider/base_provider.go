@@ -1,7 +1,15 @@
 package provider
 
-type Provider struct{}
+import "github.com/AtsuyaOotsuka/portfolio-go-chat/internal/usecase"
 
-func NewProvider() *Provider {
-	return &Provider{}
+type Provider struct {
+	mongo *usecase.Mongo
+}
+
+func NewProvider(
+	mongo *usecase.Mongo,
+) *Provider {
+	return &Provider{
+		mongo: mongo,
+	}
 }

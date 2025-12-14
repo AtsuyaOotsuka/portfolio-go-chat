@@ -1,9 +1,13 @@
 package provider
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/usecase"
+)
 
 func TestBindHealthCheckHandler(t *testing.T) {
-	provider := NewProvider()
+	provider := NewProvider(usecase.NewMongo())
 	healthCheckHandler := provider.BindHealthCheckHandler()
 
 	if healthCheckHandler == nil {
@@ -12,7 +16,7 @@ func TestBindHealthCheckHandler(t *testing.T) {
 }
 
 func TestBindRoomHandler(t *testing.T) {
-	provider := NewProvider()
+	provider := NewProvider(usecase.NewMongo())
 	roomHandler := provider.BindRoomHandler()
 
 	if roomHandler == nil {
@@ -21,7 +25,7 @@ func TestBindRoomHandler(t *testing.T) {
 }
 
 func TestBindMessageHandler(t *testing.T) {
-	provider := NewProvider()
+	provider := NewProvider(usecase.NewMongo())
 	messageHandler := provider.BindMessageHandler()
 
 	if messageHandler == nil {

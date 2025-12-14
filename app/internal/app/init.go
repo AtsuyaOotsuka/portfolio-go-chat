@@ -3,10 +3,15 @@ package app
 import (
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/middleware"
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/provider"
+	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/usecase"
 )
 
-func (a *App) initProviders() {
-	a.provider = provider.NewProvider()
+func (a *App) initProviders(
+	mongo *usecase.Mongo,
+) {
+	a.provider = provider.NewProvider(
+		mongo,
+	)
 
 }
 

@@ -94,14 +94,14 @@ func TestMessageList(t *testing.T) {
 
 			if expect["IsJoinedRoomCalled"].(int) > 0 {
 				roomSvcMock.
-					On("IsJoinedRoom", "test-room-id", "test-uuid-1234").
+					On("IsJoinedRoom", "test-room-id", "test-uuid-1234", mock.Anything).
 					Return(isJoinedErr).
 					Times(expect["IsJoinedRoomCalled"].(int))
 			}
 
 			if expect["GetMessageListCalled"].(int) > 0 {
 				messageSvcMock.
-					On("GetMessageList", "test-room-id").
+					On("GetMessageList", "test-room-id", mock.Anything).
 					Return(returnData, getMessageListErr).
 					Times(expect["GetMessageListCalled"].(int))
 			}
@@ -226,14 +226,14 @@ func TestMessageSend(t *testing.T) {
 
 			if expect["IsJoinedRoomCalled"].(int) > 0 {
 				roomSvcMock.
-					On("IsJoinedRoom", "test-room-id", "test-uuid-1234").
+					On("IsJoinedRoom", "test-room-id", "test-uuid-1234", mock.Anything).
 					Return(isJoinedErr).
 					Times(expect["IsJoinedRoomCalled"].(int))
 			}
 
 			if expect["SendMessageCalled"].(int) > 0 {
 				messageSvcMock.
-					On("SendMessage", mock.AnythingOfType("model.Message")).
+					On("SendMessage", mock.AnythingOfType("model.Message"), mock.Anything).
 					Return("new-message-id-5678", sendMessageErr).
 					Times(expect["SendMessageCalled"].(int))
 			}
@@ -346,14 +346,14 @@ func TestMessageRead(t *testing.T) {
 
 			if expect["IsJoinedRoomCalled"].(int) > 0 {
 				roomSvcMock.
-					On("IsJoinedRoom", "test-room-id", "test-uuid-1234").
+					On("IsJoinedRoom", "test-room-id", "test-uuid-1234", mock.Anything).
 					Return(isJoinedErr).
 					Times(expect["IsJoinedRoomCalled"].(int))
 			}
 
 			if expect["ReadMessagesCalled"].(int) > 0 {
 				messageSvcMock.
-					On("ReadMessages", []string{"msgid1", "msgid2"}, "test-room-id", "test-uuid-1234").
+					On("ReadMessages", []string{"msgid1", "msgid2"}, "test-room-id", "test-uuid-1234", mock.Anything).
 					Return(readMessagesErr).
 					Times(expect["ReadMessagesCalled"].(int))
 			}
@@ -520,28 +520,28 @@ func TestMessageDelete(t *testing.T) {
 
 			if expect["IsJoinedRoomCalled"].(int) > 0 {
 				roomSvcMock.
-					On("IsJoinedRoom", "test-room-id", "test-uuid-1234").
+					On("IsJoinedRoom", "test-room-id", "test-uuid-1234", mock.Anything).
 					Return(isJoinedErr).
 					Times(expect["IsJoinedRoomCalled"].(int))
 			}
 
 			if expect["IsSenderCalled"].(int) > 0 {
 				messageSvcMock.
-					On("IsSender", "msgid1", "test-room-id", "test-uuid-1234").
+					On("IsSender", "msgid1", "test-room-id", "test-uuid-1234", mock.Anything).
 					Return(isSenderErr).
 					Times(expect["IsSenderCalled"].(int))
 			}
 
 			if expect["IsRoomOwnerCalled"].(int) > 0 {
 				roomSvcMock.
-					On("IsRoomOwner", "test-room-id", "test-uuid-1234").
+					On("IsRoomOwner", "test-room-id", "test-uuid-1234", mock.Anything).
 					Return(isRoomOwnerErr).
 					Times(expect["IsRoomOwnerCalled"].(int))
 			}
 
 			if expect["DeleteMessageCalled"].(int) > 0 {
 				messageSvcMock.
-					On("DeleteMessage", "msgid1", "test-room-id").
+					On("DeleteMessage", "msgid1", "test-room-id", mock.Anything).
 					Return(deleteMessageErr).
 					Times(expect["DeleteMessageCalled"].(int))
 			}

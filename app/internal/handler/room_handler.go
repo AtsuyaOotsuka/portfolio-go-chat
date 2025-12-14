@@ -7,6 +7,7 @@ import (
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/dto"
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/model"
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/service/mongo_svc"
+	"github.com/AtsuyaOotsuka/portfolio-go-chat/public_lib/atylabmongo"
 	"github.com/labstack/echo/v4"
 )
 
@@ -38,13 +39,16 @@ func NewRoomHandler(
 }
 
 func (h *RoomHandler) List(c echo.Context) error {
+	ctx := atylabmongo.NewMongoCtxSvc()
+	defer ctx.Cancel()
+
 	target := c.QueryParam("target")
 	if target == "" {
 		target = "all"
 	}
 	uuid := h.GetUuid(c)
 
-	rooms, err := h.service.GetRoomList(uuid, target)
+	rooms, err := h.service.GetRoomList(uuid, target, ctx)
 	if err != nil {
 		return c.JSON(500, echo.Map{
 			"error": err.Error(),
@@ -70,6 +74,9 @@ func (h *RoomHandler) Create(c echo.Context) error {
 		})
 	}
 
+	ctx := atylabmongo.NewMongoCtxSvc()
+	defer ctx.Cancel()
+
 	uuid := h.GetUuid(c)
 
 	room := model.Room{
@@ -80,7 +87,7 @@ func (h *RoomHandler) Create(c echo.Context) error {
 		IsPrivate: req.IsPrivate,
 	}
 
-	InsertedID, err := h.service.CreateRoom(room)
+	InsertedID, err := h.service.CreateRoom(room, ctx)
 	if err != nil {
 		return c.JSON(500, echo.Map{
 			"error": err.Error(),
@@ -111,14 +118,17 @@ func (h *RoomHandler) Join(c echo.Context) error {
 		})
 	}
 
-	_, err = h.service.GetRoomByID(req.RoomID)
+	ctx := atylabmongo.NewMongoCtxSvc()
+	defer ctx.Cancel()
+
+	_, err = h.service.GetRoomByID(req.RoomID, ctx)
 	if err != nil {
 		return c.JSON(500, echo.Map{
 			"error": err.Error(),
 		})
 	}
 
-	err = h.service.JoinRoom(req.RoomID, h.GetUuid(c))
+	err = h.service.JoinRoom(req.RoomID, h.GetUuid(c), ctx)
 	if err != nil {
 		return c.JSON(500, echo.Map{
 			"error": err.Error(),

@@ -96,7 +96,7 @@ func TestRoomList(t *testing.T) {
 				returnErr = fmt.Errorf("GetRoomList error")
 			}
 
-			svcMock.On("GetRoomList", "test-uuid-1234", expect["expect_target"].(string)).Return(returnData, returnErr).Times(expect["GetRoomListCalled"].(int))
+			svcMock.On("GetRoomList", "test-uuid-1234", expect["expect_target"].(string), mock.Anything).Return(returnData, returnErr).Times(expect["GetRoomListCalled"].(int))
 
 			handler := NewRoomHandler(svcMock, dto)
 			err = handler.List(c)
@@ -190,7 +190,7 @@ func TestRoomCreate(t *testing.T) {
 			svcMock := new(svc_mock.RoomSvcMock)
 
 			if expect["createRoomCalled"].(int) != 0 {
-				svcMock.On("CreateRoom", mock.AnythingOfType("model.Room")).Return(roomId, returnErr).Times(expect["createRoomCalled"].(int))
+				svcMock.On("CreateRoom", mock.AnythingOfType("model.Room"), mock.Anything).Return(roomId, returnErr).Times(expect["createRoomCalled"].(int))
 			}
 
 			handler := NewRoomHandler(svcMock, dto)
@@ -285,7 +285,7 @@ func TestRoomJoin(t *testing.T) {
 			}
 
 			if expect["FindRoomByIDCalled"].(int) != 0 {
-				svcMock.On("GetRoomByID", "existing-room-id-1234").Return(model.Room{}, findReturnErr).Times(expect["FindRoomByIDCalled"].(int))
+				svcMock.On("GetRoomByID", "existing-room-id-1234", mock.Anything).Return(model.Room{}, findReturnErr).Times(expect["FindRoomByIDCalled"].(int))
 			}
 
 			var joinReturnErr error = nil
@@ -294,7 +294,7 @@ func TestRoomJoin(t *testing.T) {
 			}
 
 			if expect["JoinRoomCalled"].(int) != 0 {
-				svcMock.On("JoinRoom", "existing-room-id-1234", "test-uuid-1234").Return(joinReturnErr).Times(expect["JoinRoomCalled"].(int))
+				svcMock.On("JoinRoom", "existing-room-id-1234", "test-uuid-1234", mock.Anything).Return(joinReturnErr).Times(expect["JoinRoomCalled"].(int))
 			}
 
 			handler := NewRoomHandler(svcMock, dto)

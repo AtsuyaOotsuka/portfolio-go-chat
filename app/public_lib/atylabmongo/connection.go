@@ -10,9 +10,7 @@ import (
 )
 
 type MongoConnector struct {
-	Db     MongoDatabaseInterface
-	Ctx    context.Context
-	Cancel context.CancelFunc
+	Db MongoDatabaseInterface
 }
 
 type MongoConnectorInterface interface {
@@ -26,14 +24,12 @@ func NewMongoConnectionStruct() *MongoConnectionStruct {
 type MongoConnectionStruct struct{}
 
 func (m *MongoConnectionStruct) NewMongoConnect(database string, mongoUri string) (*MongoConnector, error) {
-	client, ctx, cancelFunc, err := m.connect(mongoUri)
+	client, err := m.connect(mongoUri)
 	if err != nil {
-		return &MongoConnector{}, err
+		return nil, err
 	}
 
 	mongoConnector := &MongoConnector{}
-	mongoConnector.Ctx = ctx
-	mongoConnector.Cancel = cancelFunc
 	mongoClient := NewMongoClientStruct(client)
 	mongoConnector.Db = mongoClient.Database(database)
 	fmt.Println("Connected to MongoDB!")
@@ -41,25 +37,25 @@ func (m *MongoConnectionStruct) NewMongoConnect(database string, mongoUri string
 	return mongoConnector, nil
 }
 
-func (m *MongoConnectionStruct) connect(mongoUri string) (*mongo.Client, context.Context, context.CancelFunc, error) {
+func (m *MongoConnectionStruct) connect(mongoUri string) (*mongo.Client, error) {
 	// タイムアウト付きのcontext
 	ctx, cancelFunc := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancelFunc()
+	defer fmt.Println("Created new MongoDB context")
 
 	clientOptions := options.Client().ApplyURI(mongoUri)
 
 	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
-		defer cancelFunc()
-		return nil, nil, nil, err
+		return nil, err
 	}
 
 	err = client.Ping(ctx, nil)
 	if err != nil {
-		defer cancelFunc()
-		return nil, nil, nil, err
+		return nil, err
 	}
 
 	fmt.Println("Connected to MongoDB!")
 
-	return client, ctx, cancelFunc, nil
+	return client, nil
 }

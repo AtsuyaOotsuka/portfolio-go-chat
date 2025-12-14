@@ -8,5 +8,6 @@ import (
 func (p *Provider) bindMongoSvc() *usecase.MongoUseCaseStruct {
 	return usecase.NewMongoUseCaseStruct(
 		atylabmongo.NewMongoConnectionStruct(),
+		p.mongo,
 	)
 }

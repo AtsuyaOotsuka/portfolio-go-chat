@@ -5,16 +5,17 @@ import (
 
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/model"
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/usecase"
+	"github.com/AtsuyaOotsuka/portfolio-go-chat/public_lib/atylabmongo"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type MessageSvcInterface interface {
-	SendMessage(message model.Message) (string, error)
-	GetMessageList(roomID string) ([]model.Message, error)
-	ReadMessages(messageIds []string, roomId string, userId string) error
-	IsSender(messageID string, roomID string, userID string) error
-	DeleteMessage(messageID string, roomID string) error
+	SendMessage(message model.Message, ctx *atylabmongo.MongoCtxSvc) (string, error)
+	GetMessageList(roomID string, ctx *atylabmongo.MongoCtxSvc) ([]model.Message, error)
+	ReadMessages(messageIds []string, roomId string, userId string, ctx *atylabmongo.MongoCtxSvc) error
+	IsSender(messageID string, roomID string, userID string, ctx *atylabmongo.MongoCtxSvc) error
+	DeleteMessage(messageID string, roomID string, ctx *atylabmongo.MongoCtxSvc) error
 }
 
 type MessageSvcStruct struct {
@@ -29,16 +30,15 @@ func NewMessageSvcStruct(
 	}
 }
 
-func (s *MessageSvcStruct) SendMessage(message model.Message) (string, error) {
+func (s *MessageSvcStruct) SendMessage(message model.Message, ctx *atylabmongo.MongoCtxSvc) (string, error) {
 	mongo, err := s.mongo.MongoInit()
 	if err != nil {
 		fmt.Println("Failed to initialize MongoDB:", err)
 		return "", err
 	}
-	defer mongo.MongoConnector.Cancel()
 
 	collection := mongo.MongoConnector.Db.Collection("messages")
-	InsertedID, err := collection.InsertOne(mongo.MongoConnector.Ctx, message)
+	InsertedID, err := collection.InsertOne(ctx.Ctx, message)
 	if err != nil {
 		return "", err
 	}
@@ -46,27 +46,26 @@ func (s *MessageSvcStruct) SendMessage(message model.Message) (string, error) {
 	return InsertedID, nil
 }
 
-func (s *MessageSvcStruct) GetMessageList(roomID string) ([]model.Message, error) {
+func (s *MessageSvcStruct) GetMessageList(roomID string, ctx *atylabmongo.MongoCtxSvc) ([]model.Message, error) {
 	mongo, err := s.mongo.MongoInit()
 	if err != nil {
 		fmt.Println("Failed to initialize MongoDB:", err)
 		return []model.Message{}, err
 	}
-	defer mongo.MongoConnector.Cancel()
 
 	collection := mongo.MongoConnector.Db.Collection("messages")
 	filter := bson.M{"roomid": roomID}
 
-	cursor, err := collection.Find(mongo.MongoConnector.Ctx, filter)
+	cursor, err := collection.Find(ctx.Ctx, filter)
 	if err != nil {
 		fmt.Println("Failed to find messages:", err)
 		return []model.Message{}, err
 	}
 
-	defer cursor.Close(mongo.MongoConnector.Ctx)
+	defer cursor.Close(ctx.Ctx)
 
 	var messages []model.Message
-	for cursor.Next(mongo.MongoConnector.Ctx) {
+	for cursor.Next(ctx.Ctx) {
 		var message model.Message
 		if err := cursor.Decode(&message); err != nil {
 			fmt.Println("Failed to decode message:", err)
@@ -78,13 +77,12 @@ func (s *MessageSvcStruct) GetMessageList(roomID string) ([]model.Message, error
 	return messages, nil
 }
 
-func (s *MessageSvcStruct) ReadMessages(messageIds []string, roomId string, userId string) error {
+func (s *MessageSvcStruct) ReadMessages(messageIds []string, roomId string, userId string, ctx *atylabmongo.MongoCtxSvc) error {
 	mongo, err := s.mongo.MongoInit()
 	if err != nil {
 		fmt.Println("Failed to initialize MongoDB:", err)
 		return err
 	}
-	defer mongo.MongoConnector.Cancel()
 
 	collection := mongo.MongoConnector.Db.Collection("messages")
 	var chatObjectIDs []primitive.ObjectID
@@ -106,7 +104,7 @@ func (s *MessageSvcStruct) ReadMessages(messageIds []string, roomId string, user
 		"$addToSet": bson.M{"isReadUserIds": userId},
 	}
 
-	_, err = collection.UpdateMany(mongo.MongoConnector.Ctx, filter, update)
+	_, err = collection.UpdateMany(ctx.Ctx, filter, update)
 	if err != nil {
 		return err
 	}
@@ -114,13 +112,12 @@ func (s *MessageSvcStruct) ReadMessages(messageIds []string, roomId string, user
 	return nil
 }
 
-func (s *MessageSvcStruct) IsSender(messageID string, roomID string, userID string) error {
+func (s *MessageSvcStruct) IsSender(messageID string, roomID string, userID string, ctx *atylabmongo.MongoCtxSvc) error {
 	mongo, err := s.mongo.MongoInit()
 	if err != nil {
 		fmt.Println("Failed to initialize MongoDB:", err)
 		return err
 	}
-	defer mongo.MongoConnector.Cancel()
 
 	collection := mongo.MongoConnector.Db.Collection("messages")
 	messageObjectID, err := primitive.ObjectIDFromHex(messageID)
@@ -135,7 +132,7 @@ func (s *MessageSvcStruct) IsSender(messageID string, roomID string, userID stri
 	}
 
 	var result model.Message
-	err = collection.FindOne(mongo.MongoConnector.Ctx, filter, &result)
+	err = collection.FindOne(ctx.Ctx, filter, &result)
 	if err != nil {
 		fmt.Println("User is not the sender of the message:", err)
 		return err
@@ -144,13 +141,12 @@ func (s *MessageSvcStruct) IsSender(messageID string, roomID string, userID stri
 	return nil
 }
 
-func (s *MessageSvcStruct) DeleteMessage(messageID string, roomID string) error {
+func (s *MessageSvcStruct) DeleteMessage(messageID string, roomID string, ctx *atylabmongo.MongoCtxSvc) error {
 	mongo, err := s.mongo.MongoInit()
 	if err != nil {
 		fmt.Println("Failed to initialize MongoDB:", err)
 		return err
 	}
-	defer mongo.MongoConnector.Cancel()
 
 	collection := mongo.MongoConnector.Db.Collection("messages")
 	messageObjectID, err := primitive.ObjectIDFromHex(messageID)
@@ -158,7 +154,7 @@ func (s *MessageSvcStruct) DeleteMessage(messageID string, roomID string) error 
 		return err
 	}
 
-	_, err = collection.DeleteOne(mongo.MongoConnector.Ctx, bson.M{"_id": messageObjectID, "roomid": roomID})
+	_, err = collection.DeleteOne(ctx.Ctx, bson.M{"_id": messageObjectID, "roomid": roomID})
 	if err != nil {
 		return err
 	}

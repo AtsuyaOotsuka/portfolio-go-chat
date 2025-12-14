@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/app"
+	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/usecase"
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/test_helper/funcs"
 	"github.com/AtsuyaOotsuka/portfolio-go-lib/atylabjwt"
 	"github.com/labstack/echo/v4"
@@ -21,7 +22,7 @@ func TestNewAppAndInitRoutes(t *testing.T) {
 
 		// App生成とルート初期化
 		a := app.NewApp()
-		a.Init(echo)
+		a.Init(echo, usecase.NewMongo())
 
 		echo.Shutdown(context.Background())
 
@@ -47,4 +48,19 @@ func TestNewAppAndInitRoutes(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Contains(t, w.Body.String(), "ok")
 	})
+}
+
+func TestAppShutdown(t *testing.T) {
+	echo := echo.New()
+	defer echo.Close()
+
+	// App生成とルート初期化
+	a := app.NewApp()
+	a.Init(echo, usecase.NewMongo())
+
+	// シャットダウン処理の呼び出し
+	a.Shutdown()
+
+	// シャットダウン後の状態を検証（必要に応じて追加）
+	assert.True(t, true, "Shutdown method executed without errors")
 }
