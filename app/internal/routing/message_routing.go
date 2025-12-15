@@ -5,7 +5,7 @@ import "github.com/AtsuyaOotsuka/portfolio-go-chat/internal/handler"
 func (r *Routing) MessageRoute(
 	handler handler.MessageHandlerInterface,
 ) {
-	messageGroup := r.echo.Group("/message")
+	messageGroup := r.echo.Group("/message", r.middleware.Room)
 
 	messageGroup.GET("/:room_id/list", handler.List)
 	messageGroup.POST("/:room_id/send", handler.Send)

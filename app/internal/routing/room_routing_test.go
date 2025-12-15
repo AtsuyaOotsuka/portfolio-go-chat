@@ -39,8 +39,7 @@ func TestRoomRouting(t *testing.T) {
 
 	e := echo.New()
 	mw := &middleware.Middleware{
-		RoomMV:    (&middleware_mock.MockRoomMiddleware{}).RoomMV,
-		RoomAdmin: (&middleware_mock.MockRoomMiddleware{}).RoomAdmin,
+		Room: (&middleware_mock.MockRoomMiddleware{}).RoomMV,
 	}
 	r := NewRouting(e, mw)
 	r.RoomRoute(&handler_mock.MockRoomHandler{})

@@ -15,8 +15,13 @@ func (a *App) initProviders(
 
 }
 
-func (a *App) initMiddlewares() {
+func (a *App) initMiddlewares(
+	mongo *usecase.Mongo,
+) {
 	// ミドルウェアの初期化
-	a.middleware = middleware.NewMiddleware(a.Echo)
-
+	a.middleware = &middleware.Middleware{
+		Csrf: a.provider.BindCsrfMiddleware().Handler(),
+		Jwt:  a.provider.BindJwtMiddleware().Handler(),
+		Room: a.provider.BindRoomMiddleware().Handler(),
+	}
 }

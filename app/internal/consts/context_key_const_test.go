@@ -10,8 +10,11 @@ func TestCtxConstList(t *testing.T) {
 	tp := v.Type()
 
 	expected := map[string]string{
-		"Uuid":  "uuid",
-		"Email": "email",
+		"Uuid":      "uuid",
+		"Email":     "email",
+		"RoomModel": "room_model",
+		"IsAdmin":   "is_admin",
+		"IsMember":  "is_member",
 	}
 
 	if tp.NumField() != len(expected) {

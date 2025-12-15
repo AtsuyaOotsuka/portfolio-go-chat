@@ -21,18 +21,15 @@ type MessageHandlerInterface interface {
 type MessageHandler struct {
 	BaseHandler
 	messageSvc mongo_svc.MessageSvcInterface
-	roomSvc    mongo_svc.RoomSvcInterface
 	dto        dto.MessageDtoInterface
 }
 
 func NewMessageHandler(
 	messageSvc mongo_svc.MessageSvcInterface,
-	roomSvc mongo_svc.RoomSvcInterface,
 	dto dto.MessageDtoInterface,
 ) *MessageHandler {
 	return &MessageHandler{
 		messageSvc: messageSvc,
-		roomSvc:    roomSvc,
 		dto:        dto,
 	}
 }
@@ -43,10 +40,9 @@ func (h *MessageHandler) List(c echo.Context) error {
 
 	roomID := c.Param("room_id")
 	uuid := h.GetUuid(c)
-
-	if err := h.roomSvc.IsJoinedRoom(roomID, uuid, ctx); err != nil {
-		return c.JSON(500, echo.Map{
-			"error": err.Error(),
+	if !h.IsMember(c) {
+		return c.JSON(403, echo.Map{
+			"error": "You are not a member of this room.",
 		})
 	}
 
@@ -81,9 +77,9 @@ func (h *MessageHandler) Send(c echo.Context) error {
 	roomID := c.Param("room_id")
 	uuid := h.GetUuid(c)
 
-	if err := h.roomSvc.IsJoinedRoom(roomID, uuid, ctx); err != nil {
-		return c.JSON(500, echo.Map{
-			"error": err.Error(),
+	if !h.IsMember(c) {
+		return c.JSON(403, echo.Map{
+			"error": "You are not a member of this room.",
 		})
 	}
 
@@ -124,14 +120,12 @@ func (h *MessageHandler) Read(c echo.Context) error {
 
 	roomID := c.Param("room_id")
 	uuid := h.GetUuid(c)
-	messageIDs := req.MessageIds
-
-	if err := h.roomSvc.IsJoinedRoom(roomID, uuid, ctx); err != nil {
-		fmt.Println("User is not a member of the room:", err)
-		return c.JSON(500, echo.Map{
-			"error": err.Error(),
+	if !h.IsMember(c) {
+		return c.JSON(403, echo.Map{
+			"error": "You are not a member of this room.",
 		})
 	}
+	messageIDs := req.MessageIds
 
 	fmt.Println("Marking messages as read:", messageIDs, "for user:", uuid, "in room:", roomID)
 	if err := h.messageSvc.ReadMessages(messageIDs, roomID, uuid, ctx); err != nil {
@@ -164,17 +158,16 @@ func (h *MessageHandler) Delete(c echo.Context) error {
 
 	roomID := c.Param("room_id")
 	uuid := h.GetUuid(c)
-	messageID := req.MessageId
-
-	if err := h.roomSvc.IsJoinedRoom(roomID, uuid, ctx); err != nil {
-		fmt.Println("User is not a member of the room:", err)
-		return c.JSON(500, echo.Map{
-			"error": err.Error(),
+	if !h.IsMember(c) {
+		return c.JSON(403, echo.Map{
+			"error": "You are not a member of this room.",
 		})
 	}
 
+	messageID := req.MessageId
+
 	if err := h.messageSvc.IsSender(messageID, roomID, uuid, ctx); err != nil {
-		if err := h.roomSvc.IsRoomOwner(roomID, uuid, ctx); err != nil {
+		if !h.IsAdmin(c) {
 			return c.JSON(403, echo.Map{
 				"error": "You are not authorized to delete this message.",
 			})

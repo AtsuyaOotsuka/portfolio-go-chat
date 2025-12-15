@@ -1,4 +1,4 @@
-package svc_mock
+package mongo_svc_mock
 
 import (
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/model"

@@ -121,10 +121,9 @@ func (h *RoomHandler) Join(c echo.Context) error {
 	ctx := atylabmongo.NewMongoCtxSvc()
 	defer ctx.Cancel()
 
-	_, err = h.service.GetRoomByID(req.RoomID, ctx)
-	if err != nil {
-		return c.JSON(500, echo.Map{
-			"error": err.Error(),
+	if h.IsMember(c) {
+		return c.JSON(400, echo.Map{
+			"error": "Already a member of the room",
 		})
 	}
 
@@ -141,10 +140,11 @@ func (h *RoomHandler) Join(c echo.Context) error {
 }
 
 func (h *RoomHandler) Members(c echo.Context) error {
-	// Implement room members logic here
+	room := h.GetRoomModel(c)
+
 	return c.JSON(200, echo.Map{
-		"room_id": c.Param("room_id"),
-		"members": []string{"user1", "user2"},
+		"room_id": room.ID,
+		"members": room.Members,
 	})
 }
 

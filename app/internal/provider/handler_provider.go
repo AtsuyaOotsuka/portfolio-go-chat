@@ -11,15 +11,14 @@ func (p *Provider) BindHealthCheckHandler() *handler.HealthCheckHandler {
 
 func (p *Provider) BindRoomHandler() *handler.RoomHandler {
 	return handler.NewRoomHandler(
-		p.bindRoomSvc(),
+		p.bindMongoRoomSvc(),
 		dto.NewRoomDtoStruct(),
 	)
 }
 
 func (p *Provider) BindMessageHandler() *handler.MessageHandler {
 	return handler.NewMessageHandler(
-		p.bindMessageSvc(),
-		p.bindRoomSvc(),
+		p.bindMongoMessageSvc(),
 		dto.NewMessageDtoStruct(),
 	)
 }

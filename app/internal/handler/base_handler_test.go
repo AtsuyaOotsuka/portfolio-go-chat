@@ -7,10 +7,12 @@ import (
 	"testing"
 
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/consts"
+	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/model"
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/usecase"
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func TestGetUuid(t *testing.T) {
@@ -41,6 +43,22 @@ func TestGetEmail(t *testing.T) {
 	email := handler.GetEmail(c)
 
 	assert.Equal(t, expectedEmail, email)
+}
+
+func TestGetRoomModel(t *testing.T) {
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+	room := model.Room{
+		ID: primitive.NewObjectID(),
+	}
+	c.Set(consts.ContextKeys.RoomModel, room)
+
+	handler := &BaseHandler{}
+	gotRoom := handler.GetRoomModel(c)
+
+	assert.Equal(t, room, gotRoom)
 }
 
 type ValidateHandler struct {

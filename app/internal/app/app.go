@@ -27,7 +27,7 @@ func (a *App) Init(
 	a.Echo = e
 	a.mongo = mongo
 	a.initProviders(mongo)
-	a.initMiddlewares()
+	a.initMiddlewares(mongo)
 	a.entryGlobalMiddleware()
 	a.entryRoutes()
 }

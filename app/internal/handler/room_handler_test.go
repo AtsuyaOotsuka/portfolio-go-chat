@@ -12,7 +12,7 @@ import (
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/dto"
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/model"
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/usecase"
-	"github.com/AtsuyaOotsuka/portfolio-go-chat/test_helper/mocks/svc_mock"
+	"github.com/AtsuyaOotsuka/portfolio-go-chat/test_helper/mocks/svc_mock/mongo_svc_mock"
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
@@ -67,7 +67,7 @@ func TestRoomList(t *testing.T) {
 			c.Set("uuid", "test-uuid-1234")
 
 			dto := dto.NewRoomDtoStruct()
-			svcMock := new(svc_mock.RoomSvcMock)
+			svcMock := new(mongo_svc_mock.RoomSvcMock)
 
 			returnData := []model.Room{
 				{
@@ -187,7 +187,7 @@ func TestRoomCreate(t *testing.T) {
 				returnErr = fmt.Errorf("CreateRoom error")
 			}
 
-			svcMock := new(svc_mock.RoomSvcMock)
+			svcMock := new(mongo_svc_mock.RoomSvcMock)
 
 			if expect["createRoomCalled"].(int) != 0 {
 				svcMock.On("CreateRoom", mock.AnythingOfType("model.Room"), mock.Anything).Return(roomId, returnErr).Times(expect["createRoomCalled"].(int))
@@ -225,36 +225,32 @@ func TestRoomCreate(t *testing.T) {
 func TestRoomJoin(t *testing.T) {
 	expected := map[string]map[string]any{
 		"success": {
-			"status":              200,
-			"body":                map[string]interface{}{"room_id": "existing-room-id-1234"},
-			"FindRoomByIDCalled":  1,
-			"FindRoomByIDSuccess": true,
-			"JoinRoomCalled":      1,
-			"JoinRoomSuccess":     true,
+			"status":          200,
+			"body":            map[string]interface{}{"room_id": "existing-room-id-1234"},
+			"JoinRoomCalled":  1,
+			"JoinRoomSuccess": true,
+			"is_member":       false,
 		},
 		"validation error (missing room_id)": {
-			"status":              400,
-			"body":                map[string]interface{}{},
-			"FindRoomByIDCalled":  0,
-			"FindRoomByIDSuccess": false,
-			"JoinRoomCalled":      0,
-			"JoinRoomSuccess":     false,
+			"status":          400,
+			"body":            map[string]interface{}{},
+			"JoinRoomCalled":  0,
+			"JoinRoomSuccess": false,
+			"is_member":       false,
 		},
-		"failure to find room": {
-			"status":              500,
-			"body":                map[string]interface{}{"room_id": "existing-room-id-1234"},
-			"FindRoomByIDCalled":  1,
-			"FindRoomByIDSuccess": false,
-			"JoinRoomCalled":      0,
-			"JoinRoomSuccess":     false,
+		"already a member": {
+			"status":          400,
+			"body":            map[string]interface{}{"room_id": "existing-room-id-1234"},
+			"JoinRoomCalled":  0,
+			"JoinRoomSuccess": false,
+			"is_member":       true,
 		},
 		"failure to join room": {
-			"status":              500,
-			"body":                map[string]interface{}{"room_id": "existing-room-id-1234"},
-			"FindRoomByIDCalled":  1,
-			"FindRoomByIDSuccess": true,
-			"JoinRoomCalled":      1,
-			"JoinRoomSuccess":     false,
+			"status":          500,
+			"body":            map[string]interface{}{"room_id": "existing-room-id-1234"},
+			"JoinRoomCalled":  1,
+			"JoinRoomSuccess": false,
+			"is_member":       false,
 		},
 	}
 
@@ -276,25 +272,23 @@ func TestRoomJoin(t *testing.T) {
 			c := e.NewContext(req, rec)
 			c.Set("uuid", "test-uuid-1234")
 
+			room := model.Room{
+				ID:      primitive.NewObjectID(),
+				Name:    "Test Room",
+				OwnerID: "owner-uuid-5678",
+				Members: []string{"test-uuid-1234", "another-uuid-91011"},
+			}
+			c.Set("room_model", room)
+			c.Set("is_member", expect["is_member"].(bool))
+
 			dto := dto.NewRoomDtoStruct()
-			svcMock := new(svc_mock.RoomSvcMock)
-
-			var findReturnErr error = nil
-			if !expect["FindRoomByIDSuccess"].(bool) {
-				findReturnErr = fmt.Errorf("GetRoomByID error")
-			}
-
-			if expect["FindRoomByIDCalled"].(int) != 0 {
-				svcMock.On("GetRoomByID", "existing-room-id-1234", mock.Anything).Return(model.Room{}, findReturnErr).Times(expect["FindRoomByIDCalled"].(int))
-			}
-
-			var joinReturnErr error = nil
-			if !expect["JoinRoomSuccess"].(bool) {
-				joinReturnErr = fmt.Errorf("JoinRoom error")
-			}
-
+			svcMock := new(mongo_svc_mock.RoomSvcMock)
 			if expect["JoinRoomCalled"].(int) != 0 {
-				svcMock.On("JoinRoom", "existing-room-id-1234", "test-uuid-1234", mock.Anything).Return(joinReturnErr).Times(expect["JoinRoomCalled"].(int))
+				var returnErr error = nil
+				if !expect["JoinRoomSuccess"].(bool) {
+					returnErr = fmt.Errorf("JoinRoom error")
+				}
+				svcMock.On("JoinRoom", "existing-room-id-1234", "test-uuid-1234", mock.Anything).Return(returnErr).Times(expect["JoinRoomCalled"].(int))
 			}
 
 			handler := NewRoomHandler(svcMock, dto)
@@ -305,16 +299,10 @@ func TestRoomJoin(t *testing.T) {
 
 			assert.Equal(t, expect["status"].(int), rec.Code)
 
-			if expect["FindRoomByIDCalled"].(int) != 0 {
+			if expect["JoinRoomCalled"].(int) != 0 {
 				svcMock.AssertExpectations(t)
 			} else {
-				svcMock.AssertNotCalled(t, "GetRoomByID")
-			}
-
-			if expect["JoinRoomCalled"].(int) == 0 {
 				svcMock.AssertNotCalled(t, "JoinRoom")
-			} else {
-				svcMock.AssertExpectations(t)
 			}
 		})
 	}

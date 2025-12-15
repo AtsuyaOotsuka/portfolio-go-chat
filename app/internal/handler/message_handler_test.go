@@ -12,7 +12,7 @@ import (
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/dto"
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/model"
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/usecase"
-	"github.com/AtsuyaOotsuka/portfolio-go-chat/test_helper/mocks/svc_mock"
+	"github.com/AtsuyaOotsuka/portfolio-go-chat/test_helper/mocks/svc_mock/mongo_svc_mock"
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
@@ -24,24 +24,21 @@ func TestMessageList(t *testing.T) {
 	expected := map[string]map[string]any{
 		"success": {
 			"status":                200,
-			"IsJoinedRoomCalled":    1,
-			"IsJoinedRoomSuccess":   true,
+			"IsMember":              true,
 			"GetMessageListCalled":  1,
 			"GetMessageListSuccess": true,
 			"success":               true,
 		},
-		"failure to check joined room": {
-			"status":                500,
-			"IsJoinedRoomCalled":    1,
-			"IsJoinedRoomSuccess":   false,
+		"forbidden (not a member)": {
+			"status":                403,
+			"IsMember":              false,
 			"GetMessageListCalled":  0,
-			"GetMessageListSuccess": true,
+			"GetMessageListSuccess": false,
 			"success":               false,
 		},
 		"failure to get message list": {
 			"status":                500,
-			"IsJoinedRoomCalled":    1,
-			"IsJoinedRoomSuccess":   true,
+			"IsMember":              true,
 			"GetMessageListCalled":  1,
 			"GetMessageListSuccess": false,
 			"success":               false,
@@ -58,10 +55,10 @@ func TestMessageList(t *testing.T) {
 			c.SetParamNames("room_id")
 			c.SetParamValues("test-room-id")
 			c.Set("uuid", "test-uuid-1234")
+			c.Set("is_member", expect["IsMember"].(bool))
 
 			dto := dto.NewMessageDtoStruct()
-			roomSvcMock := new(svc_mock.RoomSvcMock)
-			messageSvcMock := new(svc_mock.MessageSvcMock)
+			messageSvcMock := new(mongo_svc_mock.MessageSvcMock)
 
 			returnData := []model.Message{
 				{
@@ -81,22 +78,10 @@ func TestMessageList(t *testing.T) {
 					IsReadUserIds: []string{"another-sender-id"},
 				},
 			}
-
-			var isJoinedErr error = nil
-			if !expect["IsJoinedRoomSuccess"].(bool) {
-				isJoinedErr = assert.AnError
-			}
 			var getMessageListErr error = nil
 			if !expect["GetMessageListSuccess"].(bool) {
 				getMessageListErr = assert.AnError
 				returnData = []model.Message{}
-			}
-
-			if expect["IsJoinedRoomCalled"].(int) > 0 {
-				roomSvcMock.
-					On("IsJoinedRoom", "test-room-id", "test-uuid-1234", mock.Anything).
-					Return(isJoinedErr).
-					Times(expect["IsJoinedRoomCalled"].(int))
 			}
 
 			if expect["GetMessageListCalled"].(int) > 0 {
@@ -106,18 +91,12 @@ func TestMessageList(t *testing.T) {
 					Times(expect["GetMessageListCalled"].(int))
 			}
 
-			handler := NewMessageHandler(messageSvcMock, roomSvcMock, dto)
+			handler := NewMessageHandler(messageSvcMock, dto)
 			err = handler.List(c)
 
 			assert.NoError(t, err)
 
 			assert.Equal(t, expect["status"].(int), rec.Code)
-
-			if expect["IsJoinedRoomCalled"].(int) > 0 {
-				roomSvcMock.AssertExpectations(t)
-			} else {
-				roomSvcMock.AssertNotCalled(t, "IsJoinedRoom")
-			}
 
 			if expect["GetMessageListCalled"].(int) > 0 {
 				messageSvcMock.AssertExpectations(t)
@@ -154,42 +133,38 @@ func TestMessageSend(t *testing.T) {
 			"body": map[string]interface{}{
 				"message": "Hello, world!",
 			},
-			"success":             true,
-			"IsJoinedRoomCalled":  1,
-			"IsJoinedRoomSuccess": true,
-			"SendMessageCalled":   1,
-			"SendMessageSuccess":  true,
+			"IsMember":           true,
+			"success":            true,
+			"SendMessageCalled":  1,
+			"SendMessageSuccess": true,
 		},
 		"validation error (missing message)": {
-			"status":              400,
-			"body":                map[string]interface{}{},
-			"success":             false,
-			"IsJoinedRoomCalled":  0,
-			"IsJoinedRoomSuccess": true,
-			"SendMessageCalled":   0,
-			"SendMessageSuccess":  true,
+			"status":             400,
+			"body":               map[string]interface{}{},
+			"IsMember":           false,
+			"success":            false,
+			"SendMessageCalled":  0,
+			"SendMessageSuccess": true,
 		},
-		"failure to check joined room": {
-			"status": 500,
+		"forbidden (not a member)": {
+			"status": 403,
 			"body": map[string]interface{}{
 				"message": "Hello, world!",
 			},
-			"success":             false,
-			"IsJoinedRoomCalled":  1,
-			"IsJoinedRoomSuccess": false,
-			"SendMessageCalled":   0,
-			"SendMessageSuccess":  true,
+			"IsMember":           false,
+			"success":            false,
+			"SendMessageCalled":  0,
+			"SendMessageSuccess": true,
 		},
 		"failure to send message": {
 			"status": 500,
 			"body": map[string]interface{}{
 				"message": "Hello, world!",
 			},
-			"success":             false,
-			"IsJoinedRoomCalled":  1,
-			"IsJoinedRoomSuccess": true,
-			"SendMessageCalled":   1,
-			"SendMessageSuccess":  false,
+			"IsMember":           true,
+			"success":            false,
+			"SendMessageCalled":  1,
+			"SendMessageSuccess": false,
 		},
 	}
 
@@ -210,25 +185,15 @@ func TestMessageSend(t *testing.T) {
 			c.SetParamNames("room_id")
 			c.SetParamValues("test-room-id")
 			c.Set("uuid", "test-uuid-1234")
+			c.Set("is_member", expect["IsMember"].(bool))
 
 			dto := dto.NewMessageDtoStruct()
-			roomSvcMock := new(svc_mock.RoomSvcMock)
-			messageSvcMock := new(svc_mock.MessageSvcMock)
 
-			var isJoinedErr error = nil
-			if !expect["IsJoinedRoomSuccess"].(bool) {
-				isJoinedErr = assert.AnError
-			}
+			messageSvcMock := new(mongo_svc_mock.MessageSvcMock)
+
 			var sendMessageErr error = nil
 			if !expect["SendMessageSuccess"].(bool) {
 				sendMessageErr = assert.AnError
-			}
-
-			if expect["IsJoinedRoomCalled"].(int) > 0 {
-				roomSvcMock.
-					On("IsJoinedRoom", "test-room-id", "test-uuid-1234", mock.Anything).
-					Return(isJoinedErr).
-					Times(expect["IsJoinedRoomCalled"].(int))
 			}
 
 			if expect["SendMessageCalled"].(int) > 0 {
@@ -238,18 +203,12 @@ func TestMessageSend(t *testing.T) {
 					Times(expect["SendMessageCalled"].(int))
 			}
 
-			handler := NewMessageHandler(messageSvcMock, roomSvcMock, dto)
+			handler := NewMessageHandler(messageSvcMock, dto)
 			err := handler.Send(c)
 
 			assert.NoError(t, err)
 
 			assert.Equal(t, expect["status"].(int), rec.Code)
-
-			if expect["IsJoinedRoomCalled"].(int) > 0 {
-				roomSvcMock.AssertExpectations(t)
-			} else {
-				roomSvcMock.AssertNotCalled(t, "IsJoinedRoom")
-			}
 
 			if expect["SendMessageCalled"].(int) > 0 {
 				messageSvcMock.AssertExpectations(t)
@@ -277,26 +236,23 @@ func TestMessageRead(t *testing.T) {
 			"body": map[string]interface{}{
 				"message_ids": []string{"msgid1", "msgid2"},
 			},
-			"IsJoinedRoomCalled":  1,
-			"IsJoinedRoomSuccess": true,
+			"IsMember":            true,
 			"ReadMessagesCalled":  1,
 			"ReadMessagesSuccess": true,
 		},
 		"validation error (missing message_ids)": {
 			"status":              400,
 			"body":                map[string]interface{}{},
-			"IsJoinedRoomCalled":  0,
-			"IsJoinedRoomSuccess": true,
+			"IsMember":            false,
 			"ReadMessagesCalled":  0,
 			"ReadMessagesSuccess": true,
 		},
-		"failure to check joined room": {
-			"status": 500,
+		"forbidden (not a member)": {
+			"status": 403,
 			"body": map[string]interface{}{
 				"message_ids": []string{"msgid1", "msgid2"},
 			},
-			"IsJoinedRoomCalled":  1,
-			"IsJoinedRoomSuccess": false,
+			"IsMember":            false,
 			"ReadMessagesCalled":  0,
 			"ReadMessagesSuccess": true,
 		},
@@ -305,8 +261,7 @@ func TestMessageRead(t *testing.T) {
 			"body": map[string]interface{}{
 				"message_ids": []string{"msgid1", "msgid2"},
 			},
-			"IsJoinedRoomCalled":  1,
-			"IsJoinedRoomSuccess": true,
+			"IsMember":            true,
 			"ReadMessagesCalled":  1,
 			"ReadMessagesSuccess": false,
 		},
@@ -329,26 +284,15 @@ func TestMessageRead(t *testing.T) {
 			c.SetParamNames("room_id")
 			c.SetParamValues("test-room-id")
 			c.Set("uuid", "test-uuid-1234")
+			c.Set("is_member", expect["IsMember"].(bool))
 
 			dto := dto.NewMessageDtoStruct()
-			roomSvcMock := new(svc_mock.RoomSvcMock)
-			messageSvcMock := new(svc_mock.MessageSvcMock)
 
-			var isJoinedErr error = nil
-			if !expect["IsJoinedRoomSuccess"].(bool) {
-				isJoinedErr = assert.AnError
-			}
+			messageSvcMock := new(mongo_svc_mock.MessageSvcMock)
 
 			var readMessagesErr error = nil
 			if !expect["ReadMessagesSuccess"].(bool) {
 				readMessagesErr = assert.AnError
-			}
-
-			if expect["IsJoinedRoomCalled"].(int) > 0 {
-				roomSvcMock.
-					On("IsJoinedRoom", "test-room-id", "test-uuid-1234", mock.Anything).
-					Return(isJoinedErr).
-					Times(expect["IsJoinedRoomCalled"].(int))
 			}
 
 			if expect["ReadMessagesCalled"].(int) > 0 {
@@ -358,18 +302,12 @@ func TestMessageRead(t *testing.T) {
 					Times(expect["ReadMessagesCalled"].(int))
 			}
 
-			handler := NewMessageHandler(messageSvcMock, roomSvcMock, dto)
+			handler := NewMessageHandler(messageSvcMock, dto)
 			err := handler.Read(c)
 
 			assert.NoError(t, err)
 
 			assert.Equal(t, expect["status"].(int), rec.Code)
-
-			if expect["IsJoinedRoomCalled"].(int) > 0 {
-				roomSvcMock.AssertExpectations(t)
-			} else {
-				roomSvcMock.AssertNotCalled(t, "IsJoinedRoom")
-			}
 
 			if expect["ReadMessagesCalled"].(int) > 0 {
 				messageSvcMock.AssertExpectations(t)
@@ -397,12 +335,10 @@ func TestMessageDelete(t *testing.T) {
 			"body": map[string]interface{}{
 				"message_id": "msgid1",
 			},
-			"IsJoinedRoomCalled":   1,
-			"IsJoinedRoomSuccess":  true,
+			"IsMember":             true,
 			"IsSenderCalled":       1,
 			"IsSenderSuccess":      true,
-			"IsRoomOwnerCalled":    0,
-			"IsRoomOwnerSuccess":   true,
+			"IsOwner":              true,
 			"DeleteMessageCalled":  1,
 			"DeleteMessageSuccess": true,
 		},
@@ -411,27 +347,11 @@ func TestMessageDelete(t *testing.T) {
 			"body": map[string]interface{}{
 				"message_id": "msgid1",
 			},
-			"IsJoinedRoomCalled":   1,
-			"IsJoinedRoomSuccess":  true,
+			"IsMember":             true,
 			"IsSenderCalled":       1,
-			"IsSenderSuccess":      false,
-			"IsRoomOwnerCalled":    1,
-			"IsRoomOwnerSuccess":   true,
-			"DeleteMessageCalled":  1,
-			"DeleteMessageSuccess": true,
-		},
-		"failure to check joined room": {
-			"status": 500,
-			"body": map[string]interface{}{
-				"message_id": "msgid1",
-			},
-			"IsJoinedRoomCalled":   1,
-			"IsJoinedRoomSuccess":  false,
-			"IsSenderCalled":       0,
 			"IsSenderSuccess":      true,
-			"IsRoomOwnerCalled":    0,
-			"IsRoomOwnerSuccess":   true,
-			"DeleteMessageCalled":  0,
+			"IsOwner":              true,
+			"DeleteMessageCalled":  1,
 			"DeleteMessageSuccess": true,
 		},
 		"failure to check is sender or room owner": {
@@ -439,12 +359,10 @@ func TestMessageDelete(t *testing.T) {
 			"body": map[string]interface{}{
 				"message_id": "msgid1",
 			},
-			"IsJoinedRoomCalled":   1,
-			"IsJoinedRoomSuccess":  true,
+			"IsMember":             true,
 			"IsSenderCalled":       1,
 			"IsSenderSuccess":      false,
-			"IsRoomOwnerCalled":    1,
-			"IsRoomOwnerSuccess":   false,
+			"IsOwner":              false,
 			"DeleteMessageCalled":  0,
 			"DeleteMessageSuccess": true,
 		},
@@ -453,24 +371,30 @@ func TestMessageDelete(t *testing.T) {
 			"body": map[string]interface{}{
 				"message_id": "msgid1",
 			},
-			"IsJoinedRoomCalled":   1,
-			"IsJoinedRoomSuccess":  true,
+			"IsMember":             true,
 			"IsSenderCalled":       1,
 			"IsSenderSuccess":      true,
-			"IsRoomOwnerCalled":    0,
-			"IsRoomOwnerSuccess":   true,
+			"IsOwner":              true,
 			"DeleteMessageCalled":  1,
 			"DeleteMessageSuccess": false,
 		},
 		"validation error (missing message_id)": {
 			"status":               400,
 			"body":                 map[string]interface{}{},
-			"IsJoinedRoomCalled":   0,
-			"IsJoinedRoomSuccess":  true,
+			"IsMember":             false,
 			"IsSenderCalled":       0,
 			"IsSenderSuccess":      true,
-			"IsRoomOwnerCalled":    0,
-			"IsRoomOwnerSuccess":   true,
+			"IsOwner":              true,
+			"DeleteMessageCalled":  0,
+			"DeleteMessageSuccess": true,
+		},
+		"forbidden (not a member)": {
+			"status":               403,
+			"body":                 map[string]interface{}{"message_id": "msgid1"},
+			"IsMember":             false,
+			"IsSenderCalled":       0,
+			"IsSenderSuccess":      true,
+			"IsOwner":              true,
 			"DeleteMessageCalled":  0,
 			"DeleteMessageSuccess": true,
 		},
@@ -493,36 +417,21 @@ func TestMessageDelete(t *testing.T) {
 			c.SetParamNames("room_id")
 			c.SetParamValues("test-room-id")
 			c.Set("uuid", "test-uuid-1234")
+			c.Set("is_member", expect["IsMember"].(bool))
+			c.Set("is_admin", expect["IsOwner"].(bool))
 
 			dto := dto.NewMessageDtoStruct()
-			roomSvcMock := new(svc_mock.RoomSvcMock)
-			messageSvcMock := new(svc_mock.MessageSvcMock)
 
-			var isJoinedErr error = nil
-			if !expect["IsJoinedRoomSuccess"].(bool) {
-				isJoinedErr = assert.AnError
-			}
+			messageSvcMock := new(mongo_svc_mock.MessageSvcMock)
 
 			var isSenderErr error = nil
 			if !expect["IsSenderSuccess"].(bool) {
 				isSenderErr = assert.AnError
 			}
 
-			var isRoomOwnerErr error = nil
-			if !expect["IsRoomOwnerSuccess"].(bool) {
-				isRoomOwnerErr = assert.AnError
-			}
-
 			var deleteMessageErr error = nil
 			if !expect["DeleteMessageSuccess"].(bool) {
 				deleteMessageErr = assert.AnError
-			}
-
-			if expect["IsJoinedRoomCalled"].(int) > 0 {
-				roomSvcMock.
-					On("IsJoinedRoom", "test-room-id", "test-uuid-1234", mock.Anything).
-					Return(isJoinedErr).
-					Times(expect["IsJoinedRoomCalled"].(int))
 			}
 
 			if expect["IsSenderCalled"].(int) > 0 {
@@ -532,13 +441,6 @@ func TestMessageDelete(t *testing.T) {
 					Times(expect["IsSenderCalled"].(int))
 			}
 
-			if expect["IsRoomOwnerCalled"].(int) > 0 {
-				roomSvcMock.
-					On("IsRoomOwner", "test-room-id", "test-uuid-1234", mock.Anything).
-					Return(isRoomOwnerErr).
-					Times(expect["IsRoomOwnerCalled"].(int))
-			}
-
 			if expect["DeleteMessageCalled"].(int) > 0 {
 				messageSvcMock.
 					On("DeleteMessage", "msgid1", "test-room-id", mock.Anything).
@@ -546,29 +448,17 @@ func TestMessageDelete(t *testing.T) {
 					Times(expect["DeleteMessageCalled"].(int))
 			}
 
-			handler := NewMessageHandler(messageSvcMock, roomSvcMock, dto)
+			handler := NewMessageHandler(messageSvcMock, dto)
 			err := handler.Delete(c)
 
 			assert.NoError(t, err)
 
 			assert.Equal(t, expect["status"].(int), rec.Code)
 
-			if expect["IsJoinedRoomCalled"].(int) > 0 {
-				roomSvcMock.AssertExpectations(t)
-			} else {
-				roomSvcMock.AssertNotCalled(t, "IsJoinedRoom")
-			}
-
 			if expect["IsSenderCalled"].(int) > 0 {
 				messageSvcMock.AssertExpectations(t)
 			} else {
 				messageSvcMock.AssertNotCalled(t, "IsSender")
-			}
-
-			if expect["IsRoomOwnerCalled"].(int) > 0 {
-				roomSvcMock.AssertExpectations(t)
-			} else {
-				roomSvcMock.AssertNotCalled(t, "IsRoomOwner")
 			}
 
 			if expect["DeleteMessageCalled"].(int) > 0 {
