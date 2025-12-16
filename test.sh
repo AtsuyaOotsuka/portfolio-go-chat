@@ -1,6 +1,7 @@
 #!bin/bash
 
 docker compose build chat_service_app_test
+docker compose up -d chat_service_mongo_test
 
 docker compose run --rm chat_service_app_test sh -c "\
 PKGS=\$(go list ./... | grep -v test_helper) && \
@@ -10,6 +11,7 @@ rm coverage.out \
 "
 
 docker compose down chat_service_app_test
+docker compose down chat_service_mongo_test
 
 echo "カバレッジレポートをブラウザで表示しますか？ (y/n)"
 read -r answer

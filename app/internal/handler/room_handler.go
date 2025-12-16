@@ -186,21 +186,96 @@ func (h *RoomHandler) Leave(c echo.Context) error {
 }
 
 func (h *RoomHandler) Delete(c echo.Context) error {
-	// Implement room deletion logic here
+	if !h.IsAdmin(c) {
+		return c.JSON(400, echo.Map{
+			"error": "Only admin can delete the room",
+		})
+	}
+
+	roomID := c.Param("room_id")
+
+	ctx := atylabmongo.NewMongoCtxSvc()
+	defer ctx.Cancel()
+
+	err := h.service.DeleteRoom(roomID, ctx)
+	if err != nil {
+		return c.JSON(500, echo.Map{
+			"error": err.Error(),
+		})
+	}
+
 	return c.JSON(200, echo.Map{
 		"message": "room deleted",
 	})
 }
 
+type AddMemberRequest struct {
+	MemberID string `json:"member_id" form:"member_id" validate:"required"`
+}
+
 func (h *RoomHandler) AddMember(c echo.Context) error {
-	// Implement add member logic here
+	if !h.IsAdmin(c) {
+		return c.JSON(400, echo.Map{
+			"error": "Only admin can add members",
+		})
+	}
+
+	var req AddMemberRequest
+	if err := h.validateRequest(c, &req); err != nil {
+		fmt.Println("Validation error:", err)
+		return c.JSON(400, echo.Map{
+			"error": err.Error(),
+		})
+	}
+
+	roomID := c.Param("room_id")
+
+	ctx := atylabmongo.NewMongoCtxSvc()
+	defer ctx.Cancel()
+
+	err := h.service.JoinRoom(roomID, req.MemberID, ctx)
+	if err != nil {
+		return c.JSON(500, echo.Map{
+			"error": err.Error(),
+		})
+	}
+
 	return c.JSON(200, echo.Map{
 		"message": "member added",
 	})
 }
 
+type RemoveMemberRequest struct {
+	MemberID string `json:"member_id" form:"member_id" validate:"required"`
+}
+
 func (h *RoomHandler) RemoveMember(c echo.Context) error {
-	// Implement remove member logic here
+	if !h.IsAdmin(c) {
+		return c.JSON(400, echo.Map{
+			"error": "Only admin can remove members",
+		})
+	}
+
+	var req RemoveMemberRequest
+	if err := h.validateRequest(c, &req); err != nil {
+		fmt.Println("Validation error:", err)
+		return c.JSON(400, echo.Map{
+			"error": err.Error(),
+		})
+	}
+
+	roomID := c.Param("room_id")
+
+	ctx := atylabmongo.NewMongoCtxSvc()
+	defer ctx.Cancel()
+
+	err := h.service.LeaveRoom(roomID, req.MemberID, ctx)
+	if err != nil {
+		return c.JSON(500, echo.Map{
+			"error": err.Error(),
+		})
+	}
+
 	return c.JSON(200, echo.Map{
 		"message": "member removed",
 	})

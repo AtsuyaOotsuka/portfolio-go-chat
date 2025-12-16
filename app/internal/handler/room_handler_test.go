@@ -442,3 +442,234 @@ func TestRoomLeave(t *testing.T) {
 		})
 	}
 }
+
+func TestRoomDelete(t *testing.T) {
+	expected := map[string]map[string]any{
+		"success": {
+			"status":            200,
+			"IsAdmin":           true,
+			"DeleteRoomCalled":  1,
+			"DeleteRoomSuccess": true,
+		},
+		"validation error (not admin)": {
+			"status":            400,
+			"IsAdmin":           false,
+			"DeleteRoomCalled":  0,
+			"DeleteRoomSuccess": false,
+		},
+		"failure to delete room": {
+			"status":            500,
+			"IsAdmin":           true,
+			"DeleteRoomCalled":  1,
+			"DeleteRoomSuccess": false,
+		},
+	}
+
+	for name, expect := range expected {
+		t.Run(name, func(t *testing.T) {
+
+			e := echo.New()
+
+			req := httptest.NewRequest(http.MethodDelete, "/room/:room_id", nil)
+
+			rec := httptest.NewRecorder()
+			c := e.NewContext(req, rec)
+			c.Set("uuid", "test-uuid-1234")
+			c.Set("is_admin", expect["IsAdmin"].(bool))
+
+			c.SetParamNames("room_id")
+			c.SetParamValues("test-room-id")
+
+			dto := dto.NewRoomDtoStruct()
+			svcMock := new(mongo_svc_mock.RoomSvcMock)
+
+			var returnErr error = nil
+			if !expect["DeleteRoomSuccess"].(bool) {
+				returnErr = fmt.Errorf("DeleteRoom error")
+			}
+			svcMock.On("DeleteRoom", "test-room-id", mock.Anything).Return(returnErr).Times(expect["DeleteRoomCalled"].(int))
+
+			handler := NewRoomHandler(svcMock, dto)
+			err := handler.Delete(c)
+			if err != nil {
+				t.Fatalf("Expected no error, got %v", err)
+			}
+
+			assert.Equal(t, expect["status"].(int), rec.Code)
+
+			if expect["DeleteRoomCalled"].(int) != 0 {
+				svcMock.AssertExpectations(t)
+			} else {
+				svcMock.AssertNotCalled(t, "DeleteRoom")
+			}
+		})
+	}
+}
+
+func TestRoomAddMember(t *testing.T) {
+	expected := map[string]map[string]any{
+		"success": {
+			"status":          200,
+			"IsAdmin":         true,
+			"JoinRoomCalled":  1,
+			"JoinRoomSuccess": true,
+			"member_id":       "new-member-uuid-5678",
+		},
+		"validation error (not admin)": {
+			"status":          400,
+			"IsAdmin":         false,
+			"JoinRoomCalled":  0,
+			"JoinRoomSuccess": false,
+			"member_id":       "new-member-uuid-5678",
+		},
+		"validation error (missing member_id)": {
+			"status":          400,
+			"IsAdmin":         true,
+			"JoinRoomCalled":  0,
+			"JoinRoomSuccess": false,
+			"member_id":       "",
+		},
+		"failure to add member": {
+			"status":          500,
+			"IsAdmin":         true,
+			"JoinRoomCalled":  1,
+			"JoinRoomSuccess": false,
+			"member_id":       "new-member-uuid-5678",
+		},
+	}
+
+	for name, expect := range expected {
+		t.Run(name, func(t *testing.T) {
+
+			e := echo.New()
+			e.Validator = &usecase.CustomValidator{Validator: validator.New()}
+
+			body := map[string]interface{}{
+				"member_id": expect["member_id"].(string),
+			}
+
+			jsonBody, _ := json.Marshal(body)
+			reqBody := strings.NewReader(string(jsonBody))
+
+			req := httptest.NewRequest(http.MethodPost, "/room/:room_id/add_member", reqBody)
+			req.Header.Set("Content-Type", "application/json")
+
+			rec := httptest.NewRecorder()
+			c := e.NewContext(req, rec)
+			c.Set("uuid", "test-uuid-1234")
+			c.Set("is_admin", expect["IsAdmin"].(bool))
+
+			c.SetParamNames("room_id")
+			c.SetParamValues("test-room-id")
+
+			dto := dto.NewRoomDtoStruct()
+			svcMock := new(mongo_svc_mock.RoomSvcMock)
+
+			var returnErr error = nil
+			if !expect["JoinRoomSuccess"].(bool) {
+				returnErr = fmt.Errorf("JoinRoom error")
+			}
+			if expect["JoinRoomCalled"].(int) != 0 {
+				svcMock.On("JoinRoom", "test-room-id", expect["member_id"].(string), mock.Anything).Return(returnErr).Times(expect["JoinRoomCalled"].(int))
+			}
+
+			handler := NewRoomHandler(svcMock, dto)
+			err := handler.AddMember(c)
+			if err != nil {
+				t.Fatalf("Expected no error, got %v", err)
+			}
+
+			assert.Equal(t, expect["status"].(int), rec.Code)
+
+			if expect["JoinRoomCalled"].(int) != 0 {
+				svcMock.AssertExpectations(t)
+			} else {
+				svcMock.AssertNotCalled(t, "JoinRoom")
+			}
+		})
+	}
+}
+
+func TestRoomRemoveMember(t *testing.T) {
+	expected := map[string]map[string]any{
+		"success": {
+			"status":           200,
+			"IsAdmin":          true,
+			"LeaveRoomCalled":  1,
+			"LeaveRoomSuccess": true,
+			"member_id":        "member-uuid-5678",
+		},
+		"validation error (not admin)": {
+			"status":           400,
+			"IsAdmin":          false,
+			"LeaveRoomCalled":  0,
+			"LeaveRoomSuccess": false,
+			"member_id":        "member-uuid-5678",
+		},
+		"validation error (missing member_id)": {
+			"status":           400,
+			"IsAdmin":          true,
+			"LeaveRoomCalled":  0,
+			"LeaveRoomSuccess": false,
+			"member_id":        "",
+		},
+		"failure to remove member": {
+			"status":           500,
+			"IsAdmin":          true,
+			"LeaveRoomCalled":  1,
+			"LeaveRoomSuccess": false,
+			"member_id":        "member-uuid-5678",
+		},
+	}
+
+	for name, expect := range expected {
+		t.Run(name, func(t *testing.T) {
+
+			e := echo.New()
+			e.Validator = &usecase.CustomValidator{Validator: validator.New()}
+
+			body := map[string]interface{}{
+				"member_id": expect["member_id"].(string),
+			}
+
+			jsonBody, _ := json.Marshal(body)
+			reqBody := strings.NewReader(string(jsonBody))
+
+			req := httptest.NewRequest(http.MethodPost, "/room/:room_id/remove_member", reqBody)
+			req.Header.Set("Content-Type", "application/json")
+
+			rec := httptest.NewRecorder()
+			c := e.NewContext(req, rec)
+			c.Set("uuid", "test-uuid-1234")
+			c.Set("is_admin", expect["IsAdmin"].(bool))
+
+			c.SetParamNames("room_id")
+			c.SetParamValues("test-room-id")
+
+			dto := dto.NewRoomDtoStruct()
+			svcMock := new(mongo_svc_mock.RoomSvcMock)
+
+			var returnErr error = nil
+			if !expect["LeaveRoomSuccess"].(bool) {
+				returnErr = fmt.Errorf("LeaveRoom error")
+			}
+			if expect["LeaveRoomCalled"].(int) != 0 {
+				svcMock.On("LeaveRoom", "test-room-id", expect["member_id"].(string), mock.Anything).Return(returnErr).Times(expect["LeaveRoomCalled"].(int))
+			}
+
+			handler := NewRoomHandler(svcMock, dto)
+			err := handler.RemoveMember(c)
+			if err != nil {
+				t.Fatalf("Expected no error, got %v", err)
+			}
+
+			assert.Equal(t, expect["status"].(int), rec.Code)
+
+			if expect["LeaveRoomCalled"].(int) != 0 {
+				svcMock.AssertExpectations(t)
+			} else {
+				svcMock.AssertNotCalled(t, "LeaveRoom")
+			}
+		})
+	}
+}

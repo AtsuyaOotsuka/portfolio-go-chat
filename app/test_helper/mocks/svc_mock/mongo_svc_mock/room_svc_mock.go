@@ -44,3 +44,8 @@ func (m *RoomSvcMock) LeaveRoom(roomID string, uuid string, ctx *atylabmongo.Mon
 	args := m.Called(roomID, uuid, ctx)
 	return args.Error(0)
 }
+
+func (m *RoomSvcMock) DeleteRoom(roomID string, ctx *atylabmongo.MongoCtxSvc) error {
+	args := m.Called(roomID, ctx)
+	return args.Error(0)
+}

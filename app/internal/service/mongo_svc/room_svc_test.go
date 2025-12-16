@@ -311,3 +311,49 @@ func TestLeaveRoom(t *testing.T) {
 		}
 	})
 }
+
+func TestDeleteRoom(t *testing.T) {
+	funcs.WithEnvMap(mongoSvcEnvs, t, func() {
+		tests := []struct {
+			name         string
+			initErr      bool
+			roomId       string
+			deleteOneErr bool
+			returnErr    bool
+		}{
+			{"success", false, "64a7b2f4e13e4c3f9c8b4567", false, false},
+			{"error", true, "64a7b2f4e13e4c3f9c8b4567", false, true},
+			{"invalid_id", false, "invalid_object_id", false, true},
+			{"deleteone_error", false, "64a7b2f4e13e4c3f9c8b4567", true, true},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				mongoCollectionMock := new(atylabmongo.MongoCollectionStructMock)
+				if tt.deleteOneErr {
+					mongoCollectionMock.On("DeleteOne", mock.Anything, mock.Anything).Return(&mongo.DeleteResult{}, assert.AnError)
+				} else {
+					mongoCollectionMock.On("DeleteOne", mock.Anything, mock.Anything).Return(&mongo.DeleteResult{}, nil)
+				}
+				mongoDatabaseMock := new(atylabmongo.MongoDatabaseStructMock)
+				mongoDatabaseMock.On("Collection", "rooms").Return(mongoCollectionMock)
+
+				mongoConnectorStruct := &atylabmongo.MongoConnector{
+					Db: mongoDatabaseMock,
+				}
+				mongoConnectionStructMock := setupInitMock(tt.initErr, mongoConnectorStruct)
+
+				mongoUseCase := usecase.NewMongoUseCaseStruct(mongoConnectionStructMock, usecase.NewMongo())
+				roomSvc := NewRoomSvcStruct(mongoUseCase)
+
+				err := roomSvc.DeleteRoom(tt.roomId, atylabmongo.NewMongoCtxSvc())
+				if (err != nil) != tt.returnErr {
+					t.Errorf("DeleteRoom() [%s] error = %v, initErr %v", tt.name, err, tt.initErr)
+				}
+				if m, ok := mongoConnectionStructMock.(interface{ AssertExpectations(*testing.T) }); ok {
+					m.AssertExpectations(t)
+				}
+			})
+		}
+	})
+}

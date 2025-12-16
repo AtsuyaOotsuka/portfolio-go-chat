@@ -29,6 +29,13 @@ var mongoSvcEnvs = funcs.Envs{
 	"MONGO_PASS": "testpass",
 }
 
+var unsetEnvs = funcs.EnvUnsetKeys{
+	"MONGO_HOST",
+	"MONGO_PORT",
+	"MONGO_USER",
+	"MONGO_PASS",
+}
+
 func TestMakeUri(t *testing.T) {
 	funcs.WithEnvMap(mongoSvcEnvs, t, func() {
 		uri, err := makeUri()
@@ -43,13 +50,17 @@ func TestMakeUri(t *testing.T) {
 }
 
 func TestMakeUriNotEnv(t *testing.T) {
-	uri, err := makeUri()
-	if err == nil {
-		t.Fatalf("Expected error due to missing env vars, got nil")
-	}
-	if uri != "" {
-		t.Errorf("Expected empty URI on error, got %s", uri)
-	}
+	funcs.WithEnvUnset(unsetEnvs, t, func() {
+
+		uri, err := makeUri()
+		if err == nil {
+			t.Fatalf("Expected error due to missing env vars, got nil")
+		}
+		if uri != "" {
+			t.Errorf("Expected empty URI on error, got %s", uri)
+		}
+
+	})
 }
 
 func TestMongoInit(t *testing.T) {
@@ -114,14 +125,17 @@ func TestMongoInitNewMongoConnectError(t *testing.T) {
 }
 
 func TestMongoInitNotEnv(t *testing.T) {
-	mockMongoConnectorPkg := &atylabmongo.MongoConnectionStructMock{}
-	mongoUseCase := NewMongoUseCaseStruct(
-		mockMongoConnectorPkg,
-		NewMongo(),
-	)
+	funcs.WithEnvUnset(unsetEnvs, t, func() {
 
-	_, err := mongoUseCase.MongoInit()
-	if err == nil {
-		t.Fatalf("Expected error due to missing env vars, got nil")
-	}
+		mockMongoConnectorPkg := &atylabmongo.MongoConnectionStructMock{}
+		mongoUseCase := NewMongoUseCaseStruct(
+			mockMongoConnectorPkg,
+			NewMongo(),
+		)
+
+		_, err := mongoUseCase.MongoInit()
+		if err == nil {
+			t.Fatalf("Expected error due to missing env vars, got nil")
+		}
+	})
 }

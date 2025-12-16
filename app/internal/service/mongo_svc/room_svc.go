@@ -16,6 +16,7 @@ type RoomSvcInterface interface {
 	GetRoomByID(roomID string, ctx *atylabmongo.MongoCtxSvc) (model.Room, error)
 	JoinRoom(roomID string, uuid string, ctx *atylabmongo.MongoCtxSvc) error
 	LeaveRoom(roomID string, uuid string, ctx *atylabmongo.MongoCtxSvc) error
+	DeleteRoom(roomID string, ctx *atylabmongo.MongoCtxSvc) error
 }
 
 type RoomSvcStruct struct {
@@ -160,6 +161,31 @@ func (s *RoomSvcStruct) LeaveRoom(roomID string, uuid string, ctx *atylabmongo.M
 		ctx.Ctx,
 		bson.M{"_id": id},
 		bson.M{"$pull": bson.M{"members": uuid}},
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *RoomSvcStruct) DeleteRoom(roomID string, ctx *atylabmongo.MongoCtxSvc) error {
+	mongo, err := s.mongo.MongoInit()
+	if err != nil {
+		fmt.Println("Failed to initialize MongoDB:", err)
+		return err
+	}
+
+	id, err := primitive.ObjectIDFromHex(roomID)
+	if err != nil {
+		return err
+	}
+
+	collection := mongo.MongoConnector.Db.Collection("rooms")
+
+	_, err = collection.DeleteOne(
+		ctx.Ctx,
+		bson.M{"_id": id},
 	)
 	if err != nil {
 		return err

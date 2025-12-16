@@ -34,3 +34,23 @@ func WithEnvMap(envs Envs, t *testing.T, fn func()) {
 
 	fn()
 }
+
+type EnvUnsetKeys []string
+
+func WithEnvUnset(envs EnvUnsetKeys, t *testing.T, fn func()) {
+	originals := make(map[string]string)
+	for _, key := range envs {
+		originals[key] = os.Getenv(key)
+		if err := os.Unsetenv(key); err != nil {
+			t.Fatalf("Failed to unset environment variable %s: %v", key, err)
+		}
+	}
+
+	defer func() {
+		for key, original := range originals {
+			os.Setenv(key, original)
+		}
+	}()
+
+	fn()
+}
