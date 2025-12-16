@@ -39,3 +39,8 @@ func (m *RoomSvcMock) IsRoomOwner(roomID string, uuid string, ctx *atylabmongo.M
 	args := m.Called(roomID, uuid, ctx)
 	return args.Error(0)
 }
+
+func (m *RoomSvcMock) LeaveRoom(roomID string, uuid string, ctx *atylabmongo.MongoCtxSvc) error {
+	args := m.Called(roomID, uuid, ctx)
+	return args.Error(0)
+}

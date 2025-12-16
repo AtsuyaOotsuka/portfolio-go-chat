@@ -306,5 +306,139 @@ func TestRoomJoin(t *testing.T) {
 			}
 		})
 	}
+}
 
+func TestRoomMembers(t *testing.T) {
+	expected := map[string]map[string]any{
+		"success": {
+			"status":   200,
+			"IsMember": true,
+		},
+		"validation error (not a member)": {
+			"status":   400,
+			"IsMember": false,
+		},
+	}
+
+	for name, expect := range expected {
+		t.Run(name, func(t *testing.T) {
+
+			e := echo.New()
+
+			req := httptest.NewRequest(http.MethodGet, "/room/:room_id/members", nil)
+
+			rec := httptest.NewRecorder()
+			c := e.NewContext(req, rec)
+			c.Set("uuid", "test-uuid-1234")
+			c.Set("is_member", expect["IsMember"].(bool))
+
+			room := model.Room{
+				ID:      primitive.NewObjectID(),
+				Name:    "Test Room",
+				OwnerID: "owner-uuid-5678",
+				Members: []string{"test-uuid-1234", "another-uuid-91011"},
+			}
+			c.Set("room_model", room)
+
+			c.SetParamNames("room_id")
+			c.SetParamValues("test-room-id")
+
+			dto := dto.NewRoomDtoStruct()
+			svcMock := new(mongo_svc_mock.RoomSvcMock)
+
+			handler := NewRoomHandler(svcMock, dto)
+			err := handler.Members(c)
+			if err != nil {
+				t.Fatalf("Expected no error, got %v", err)
+			}
+
+			assert.Equal(t, expect["status"].(int), rec.Code)
+
+			if expect["status"].(int) != 200 {
+				return
+			}
+
+			result := map[string][]interface{}{}
+			err = json.Unmarshal(rec.Body.Bytes(), &result)
+			assert.NoError(t, err)
+
+			assert.Len(t, result["members"], 2)
+			assert.Equal(t, "test-uuid-1234", result["members"][0])
+			assert.Equal(t, "another-uuid-91011", result["members"][1])
+		})
+	}
+}
+
+func TestRoomLeave(t *testing.T) {
+	expected := map[string]map[string]any{
+		"success": {
+			"status":           200,
+			"IsMember":         true,
+			"IsAdmin":          false,
+			"LeaveRoomCalled":  1,
+			"LeaveRoomSuccess": true,
+		},
+		"validation error (not a member)": {
+			"status":           400,
+			"IsMember":         false,
+			"IsAdmin":          false,
+			"LeaveRoomCalled":  0,
+			"LeaveRoomSuccess": false,
+		},
+		"validation error (is admin)": {
+			"status":           400,
+			"IsMember":         true,
+			"IsAdmin":          true,
+			"LeaveRoomCalled":  0,
+			"LeaveRoomSuccess": false,
+		},
+		"failure to leave room": {
+			"status":           500,
+			"IsMember":         true,
+			"IsAdmin":          false,
+			"LeaveRoomCalled":  1,
+			"LeaveRoomSuccess": false,
+		},
+	}
+
+	for name, expect := range expected {
+		t.Run(name, func(t *testing.T) {
+
+			e := echo.New()
+
+			req := httptest.NewRequest(http.MethodPost, "/room/:room_id/leave", nil)
+
+			rec := httptest.NewRecorder()
+			c := e.NewContext(req, rec)
+			c.Set("uuid", "test-uuid-1234")
+			c.Set("is_member", expect["IsMember"].(bool))
+			c.Set("is_admin", expect["IsAdmin"].(bool))
+
+			c.SetParamNames("room_id")
+			c.SetParamValues("test-room-id")
+
+			dto := dto.NewRoomDtoStruct()
+			svcMock := new(mongo_svc_mock.RoomSvcMock)
+
+			var returnErr error = nil
+			if !expect["LeaveRoomSuccess"].(bool) {
+				returnErr = fmt.Errorf("LeaveRoom error")
+			}
+			svcMock.On("LeaveRoom", "test-room-id", "test-uuid-1234", mock.Anything).Return(returnErr).Times(expect["LeaveRoomCalled"].(int))
+
+			handler := NewRoomHandler(svcMock, dto)
+			err := handler.Leave(c)
+			if err != nil {
+				t.Fatalf("Expected no error, got %v", err)
+			}
+
+			assert.Equal(t, expect["status"].(int), rec.Code)
+
+			if expect["LeaveRoomCalled"].(int) != 0 {
+				svcMock.AssertExpectations(t)
+			} else {
+				svcMock.AssertNotCalled(t, "LeaveRoom")
+			}
+		})
+	}
 }

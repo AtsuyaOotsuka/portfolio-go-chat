@@ -140,16 +140,46 @@ func (h *RoomHandler) Join(c echo.Context) error {
 }
 
 func (h *RoomHandler) Members(c echo.Context) error {
+	if !h.IsMember(c) {
+		return c.JSON(400, echo.Map{
+			"error": "Not a member of the room",
+		})
+	}
+
 	room := h.GetRoomModel(c)
 
 	return c.JSON(200, echo.Map{
-		"room_id": room.ID,
 		"members": room.Members,
 	})
 }
 
 func (h *RoomHandler) Leave(c echo.Context) error {
-	// Implement room leave logic here
+
+	if !h.IsMember(c) {
+		return c.JSON(400, echo.Map{
+			"error": "Not a member of the room",
+		})
+	}
+
+	if h.IsAdmin(c) {
+		return c.JSON(400, echo.Map{
+			"error": "Admin cannot leave the room",
+		})
+	}
+
+	uuid := h.GetUuid(c)
+	roomID := c.Param("room_id")
+
+	ctx := atylabmongo.NewMongoCtxSvc()
+	defer ctx.Cancel()
+
+	err := h.service.LeaveRoom(roomID, uuid, ctx)
+	if err != nil {
+		return c.JSON(500, echo.Map{
+			"error": err.Error(),
+		})
+	}
+
 	return c.JSON(200, echo.Map{
 		"message": "left room",
 	})
