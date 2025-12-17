@@ -37,7 +37,7 @@ func (s *MessageSvcStruct) SendMessage(message model.Message, ctx *atylabmongo.M
 		return "", err
 	}
 
-	collection := mongo.MongoConnector.Db.Collection("messages")
+	collection := mongo.MongoConnector.Db.Collection(model.MessageCollectionName)
 	InsertedID, err := collection.InsertOne(ctx.Ctx, message)
 	if err != nil {
 		return "", err
@@ -53,7 +53,7 @@ func (s *MessageSvcStruct) GetMessageList(roomID string, ctx *atylabmongo.MongoC
 		return []model.Message{}, err
 	}
 
-	collection := mongo.MongoConnector.Db.Collection("messages")
+	collection := mongo.MongoConnector.Db.Collection(model.MessageCollectionName)
 	filter := bson.M{"roomid": roomID}
 
 	cursor, err := collection.Find(ctx.Ctx, filter)
@@ -84,7 +84,7 @@ func (s *MessageSvcStruct) ReadMessages(messageIds []string, roomId string, user
 		return err
 	}
 
-	collection := mongo.MongoConnector.Db.Collection("messages")
+	collection := mongo.MongoConnector.Db.Collection(model.MessageCollectionName)
 	var chatObjectIDs []primitive.ObjectID
 	for _, id := range messageIds {
 		fmt.Println("Processing message ID:", id)
@@ -119,7 +119,7 @@ func (s *MessageSvcStruct) IsSender(messageID string, roomID string, userID stri
 		return err
 	}
 
-	collection := mongo.MongoConnector.Db.Collection("messages")
+	collection := mongo.MongoConnector.Db.Collection(model.MessageCollectionName)
 	messageObjectID, err := primitive.ObjectIDFromHex(messageID)
 	if err != nil {
 		return err
@@ -148,7 +148,7 @@ func (s *MessageSvcStruct) DeleteMessage(messageID string, roomID string, ctx *a
 		return err
 	}
 
-	collection := mongo.MongoConnector.Db.Collection("messages")
+	collection := mongo.MongoConnector.Db.Collection(model.MessageCollectionName)
 	messageObjectID, err := primitive.ObjectIDFromHex(messageID)
 	if err != nil {
 		return err

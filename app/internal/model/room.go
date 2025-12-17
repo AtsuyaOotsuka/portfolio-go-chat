@@ -6,6 +6,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+const RoomCollectionName = "rooms"
+
 type Room struct {
 	ID        primitive.ObjectID `bson:"_id,omitempty"`
 	Name      string             `bson:"name"`

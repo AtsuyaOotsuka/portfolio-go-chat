@@ -37,7 +37,7 @@ func (s *RoomSvcStruct) GetRoomList(uuid string, target string, ctx *atylabmongo
 	case "all":
 		filter = bson.M{
 			"$or": []bson.M{
-				{"isprivate": false},
+				{"is_private": false},
 				{"members": uuid}, // 参加済みの場合はプライベートでも表示
 			},
 		}
@@ -53,7 +53,7 @@ func (s *RoomSvcStruct) GetRoomList(uuid string, target string, ctx *atylabmongo
 		return []model.Room{}, err
 	}
 
-	collection := mongo.MongoConnector.Db.Collection("rooms")
+	collection := mongo.MongoConnector.Db.Collection(model.RoomCollectionName)
 
 	cursor, err := collection.Find(ctx.Ctx, filter)
 	if err != nil {
@@ -82,7 +82,7 @@ func (s *RoomSvcStruct) CreateRoom(room model.Room, ctx *atylabmongo.MongoCtxSvc
 		return "", err
 	}
 
-	collection := mongo.MongoConnector.Db.Collection("rooms")
+	collection := mongo.MongoConnector.Db.Collection(model.RoomCollectionName)
 
 	InsertedID, err := collection.InsertOne(ctx.Ctx, room)
 	if err != nil {
@@ -100,7 +100,7 @@ func (s *RoomSvcStruct) GetRoomByID(roomID string, ctx *atylabmongo.MongoCtxSvc)
 		return model.Room{}, err
 	}
 
-	collection := mongo.MongoConnector.Db.Collection("rooms")
+	collection := mongo.MongoConnector.Db.Collection(model.RoomCollectionName)
 
 	id, err := primitive.ObjectIDFromHex(roomID)
 	if err != nil {
@@ -129,7 +129,7 @@ func (s *RoomSvcStruct) JoinRoom(roomID string, uuid string, ctx *atylabmongo.Mo
 		return err
 	}
 
-	collection := mongo.MongoConnector.Db.Collection("rooms")
+	collection := mongo.MongoConnector.Db.Collection(model.RoomCollectionName)
 
 	_, err = collection.UpdateOne(
 		ctx.Ctx,
@@ -155,7 +155,7 @@ func (s *RoomSvcStruct) LeaveRoom(roomID string, uuid string, ctx *atylabmongo.M
 		return err
 	}
 
-	collection := mongo.MongoConnector.Db.Collection("rooms")
+	collection := mongo.MongoConnector.Db.Collection(model.RoomCollectionName)
 
 	_, err = collection.UpdateOne(
 		ctx.Ctx,
@@ -181,7 +181,7 @@ func (s *RoomSvcStruct) DeleteRoom(roomID string, ctx *atylabmongo.MongoCtxSvc) 
 		return err
 	}
 
-	collection := mongo.MongoConnector.Db.Collection("rooms")
+	collection := mongo.MongoConnector.Db.Collection(model.RoomCollectionName)
 
 	_, err = collection.DeleteOne(
 		ctx.Ctx,

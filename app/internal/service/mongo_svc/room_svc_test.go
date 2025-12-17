@@ -60,7 +60,7 @@ func TestGetRooms(t *testing.T) {
 				if tt.request == "all" {
 					filter = bson.M{
 						"$or": []bson.M{
-							{"isprivate": false},
+							{"is_private": false},
 							{"members": "user123"},
 						},
 					}

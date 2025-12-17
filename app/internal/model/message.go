@@ -6,6 +6,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+const MessageCollectionName = "messages"
+
 type Message struct {
 	ID            primitive.ObjectID `bson:"_id,omitempty"`
 	RoomID        string             `bson:"roomid"`
