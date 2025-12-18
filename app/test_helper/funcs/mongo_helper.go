@@ -70,8 +70,8 @@ func (m *TestMongoStruct) MongoCleanUp() error {
 	return nil
 }
 
-func (m *TestMongoStruct) InsertRoom(room model.Room) (string, error) {
-	result, err := m.DB.Collection(model.RoomCollectionName).InsertOne(m.Ctx, room)
+func (m *TestMongoStruct) Insert(collectionName string, doc interface{}) (string, error) {
+	result, err := m.DB.Collection(collectionName).InsertOne(m.Ctx, doc)
 	if err != nil {
 		return "", err
 	}
@@ -84,16 +84,14 @@ func (m *TestMongoStruct) InsertRoom(room model.Room) (string, error) {
 	return InsertId, nil
 }
 
-func (m *TestMongoStruct) InsertRooms(room []model.Room) ([]string, error) {
-	var insertedIDs []string
-	for _, r := range room {
-		InsertedID, err := m.InsertRoom(r)
-		if err != nil {
-			return nil, err
-		}
-		insertedIDs = append(insertedIDs, InsertedID)
+func (m *TestMongoStruct) FindOneContents(collectionName string, id string) (*mongo.SingleResult, error) {
+	objID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, err
 	}
-	return insertedIDs, nil
+	filter := primitive.M{"_id": objID}
+	result := m.DB.Collection(collectionName).FindOne(m.Ctx, filter)
+	return result, nil
 }
 
 func (m *TestMongoStruct) ExistContents(collectionName string, filter interface{}) (bool, error) {
