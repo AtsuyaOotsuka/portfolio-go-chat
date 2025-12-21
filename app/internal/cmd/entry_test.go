@@ -10,7 +10,7 @@ import (
 func TestRootSetUp(t *testing.T) {
 	c := &Cmd{}
 	rootCmd := new(command_mock.RootCommandMock)
-	rootCmd.On("Run").Return()
+	rootCmd.On("Run", mock.Anything).Return()
 
 	c.rootCmd = rootCmd
 	c.rootSetUp()

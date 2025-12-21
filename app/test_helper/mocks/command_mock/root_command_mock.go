@@ -6,6 +6,6 @@ type RootCommandMock struct {
 	mock.Mock
 }
 
-func (m *RootCommandMock) Run() {
-	m.Called()
+func (m *RootCommandMock) Run(args []string) {
+	m.Called(args)
 }

@@ -6,6 +6,6 @@ type VersionCommandMock struct {
 	mock.Mock
 }
 
-func (m *VersionCommandMock) Run() {
-	m.Called()
+func (m *VersionCommandMock) Run(args []string) {
+	m.Called(args)
 }

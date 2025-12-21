@@ -56,7 +56,7 @@ func TestRoomListCmdRun(t *testing.T) {
 
 			// 標準出力をキャプチャ
 			outPut := funcs.CaptureStdout(t, func() {
-				cmd.Run()
+				cmd.Run([]string{})
 			})
 
 			// 期待される出力を定義

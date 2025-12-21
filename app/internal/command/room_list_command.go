@@ -10,7 +10,7 @@ import (
 
 type RoomListCommandInterface interface {
 	SetUp(mongo usecase.MongoUseCaseInterface)
-	Run()
+	Run(args []string)
 }
 
 type RoomListCommand struct {
@@ -28,7 +28,7 @@ func (c *RoomListCommand) SetUp(mongo usecase.MongoUseCaseInterface) {
 	)
 }
 
-func (c *RoomListCommand) Run() {
+func (c *RoomListCommand) Run(args []string) {
 	ctx := atylabmongo.NewMongoCtxSvc()
 	defer ctx.Cancel()
 

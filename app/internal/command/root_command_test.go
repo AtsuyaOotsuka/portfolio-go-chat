@@ -10,7 +10,7 @@ func TestRootCmdRun(t *testing.T) {
 	cmd := NewRootCommand()
 
 	outPut := funcs.CaptureStdout(t, func() {
-		cmd.Run()
+		cmd.Run([]string{})
 	})
 
 	expected := "コマンドのヘルプを見るには --help を付けて実行してください\n"

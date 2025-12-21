@@ -17,3 +17,11 @@ func NewMongoCtxSvc() *MongoCtxSvc {
 		Cancel: cancel,
 	}
 }
+
+func NewMongoCtxSvcWithTimeout(timeout time.Duration) *MongoCtxSvc {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	return &MongoCtxSvc{
+		Ctx:    ctx,
+		Cancel: cancel,
+	}
+}

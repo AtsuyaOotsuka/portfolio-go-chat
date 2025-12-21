@@ -8,9 +8,10 @@ import (
 type Cmd struct {
 	Cmd *cobra.Command
 
-	rootCmd     command.RootCommandInterface
-	versionCmd  command.VersionCommandInterface
-	roomListCmd command.RoomListCommandInterface
+	rootCmd           command.RootCommandInterface
+	versionCmd        command.VersionCommandInterface
+	roomListCmd       command.RoomListCommandInterface
+	forbiddenWordsCmd command.ForbiddenWordsCommandInterface
 }
 
 func NewCmd() *Cmd {

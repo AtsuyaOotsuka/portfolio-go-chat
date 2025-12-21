@@ -10,7 +10,7 @@ func TestVersionCmdRun(t *testing.T) {
 	cmd := NewVersionCommand()
 
 	outPut := funcs.CaptureStdout(t, func() {
-		cmd.Run()
+		cmd.Run([]string{})
 	})
 
 	expected := "mycli version 1.0.0\n"

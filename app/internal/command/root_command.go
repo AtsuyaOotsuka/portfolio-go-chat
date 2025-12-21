@@ -3,7 +3,7 @@ package command
 import "fmt"
 
 type RootCommandInterface interface {
-	Run()
+	Run(args []string)
 }
 
 type RootCommand struct {
@@ -14,6 +14,6 @@ func NewRootCommand() *RootCommand {
 	return &RootCommand{}
 }
 
-func (c *RootCommand) Run() {
+func (c *RootCommand) Run(args []string) {
 	fmt.Println("コマンドのヘルプを見るには --help を付けて実行してください")
 }

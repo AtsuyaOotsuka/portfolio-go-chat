@@ -5,7 +5,7 @@ import (
 )
 
 type VersionCommandInterface interface {
-	Run()
+	Run(args []string)
 }
 
 type VersionCommand struct {
@@ -16,6 +16,6 @@ func NewVersionCommand() *VersionCommand {
 	return &VersionCommand{}
 }
 
-func (c *VersionCommand) Run() {
+func (c *VersionCommand) Run(args []string) {
 	fmt.Println("mycli version 1.0.0")
 }

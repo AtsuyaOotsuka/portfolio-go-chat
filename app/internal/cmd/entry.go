@@ -11,6 +11,7 @@ func (c *Cmd) bind() {
 	c.rootCmd = command.NewRootCommand()
 	c.versionCmd = command.NewVersionCommand()
 	c.roomListCmd = command.NewRoomListCommand()
+	c.forbiddenWordsCmd = command.NewForbiddenWordsCommand()
 }
 
 func (c *Cmd) rootSetUp() {
@@ -19,7 +20,7 @@ func (c *Cmd) rootSetUp() {
 		Short: "MyCLI is a sample CLI tool",
 		Long:  "MyCLI is a sample CLI tool built with Cobra",
 		Run: func(cmd *cobra.Command, args []string) {
-			c.rootCmd.Run()
+			c.rootCmd.Run(args)
 		},
 	}
 }
@@ -28,16 +29,24 @@ func (c *Cmd) entry() {
 	c.set(
 		"version",
 		"Print version",
-		func() {
-			c.versionCmd.Run()
+		func(args []string) {
+			c.versionCmd.Run(args)
 		},
 	)
 	c.set(
 		"room-list",
 		"List all chat rooms",
-		func() {
+		func(args []string) {
 			c.roomListCmd.SetUp(c.initMongo())
-			c.roomListCmd.Run()
+			c.roomListCmd.Run(args)
+		},
+	)
+	c.set(
+		"forbidden-words",
+		"Manage forbidden words",
+		func(args []string) {
+			c.forbiddenWordsCmd.SetUp(c.initMongo())
+			c.forbiddenWordsCmd.Run(args)
 		},
 	)
 }
@@ -45,14 +54,14 @@ func (c *Cmd) entry() {
 func (c *Cmd) set(
 	use string,
 	short string,
-	run func(),
+	run func(args []string),
 ) {
 	c.Cmd.AddCommand(
 		&cobra.Command{
 			Use:   use,
 			Short: short,
 			Run: func(cmd *cobra.Command, args []string) {
-				run()
+				run(args)
 			},
 		},
 	)
