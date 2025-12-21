@@ -10,7 +10,6 @@ RUN go mod download
 COPY ./app .
 
 # ビルド（※ main.go は app直下にある）
-RUN go build -o main ./entry_point/api/main.go
+RUN go build -o main ./entry_point/cmd/main.go
 
-EXPOSE 8081
-CMD ["./main"]
+CMD ["tail", "-f", "/dev/null"]
