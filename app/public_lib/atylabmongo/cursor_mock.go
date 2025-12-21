@@ -24,3 +24,8 @@ func (m *MongoCursorStructMock) Close(ctx context.Context) error {
 	args := m.Called(ctx)
 	return args.Error(0)
 }
+
+func (m *MongoCursorStructMock) All(ctx context.Context, result interface{}) error {
+	args := m.Called(ctx, result)
+	return args.Error(0)
+}

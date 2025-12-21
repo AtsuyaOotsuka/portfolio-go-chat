@@ -22,5 +22,13 @@ services:
     env_file:
       - .env
 
+  chat_service_cmd:
+    build:
+      context: .
+      dockerfile: docker/cmd/Dockerfile
+    container_name: chat_service_cmd
+    env_file:
+      - .env
+
 volumes:
   chat_service_mongo_data:
