@@ -12,7 +12,7 @@ import (
 )
 
 type ForbiddenWordsCommandInterface interface {
-	SetUp(mongo usecase.MongoUseCaseInterface)
+	SetUp(mongo usecase.MongoUseCaseInterface, timeOut int)
 	Run(args []string)
 }
 
@@ -20,24 +20,29 @@ type ForbiddenWordsCommand struct {
 	BaseCommand
 	room_svc    cmd_svc.RoomSvcInterface
 	message_svc cmd_svc.MessageSvcInterface
+	timeOut     int
 }
 
 func NewForbiddenWordsCommand() *ForbiddenWordsCommand {
 	return &ForbiddenWordsCommand{}
 }
 
-func (c *ForbiddenWordsCommand) SetUp(mongo usecase.MongoUseCaseInterface) {
+func (c *ForbiddenWordsCommand) SetUp(
+	mongo usecase.MongoUseCaseInterface,
+	timeOut int,
+) {
 	c.room_svc = cmd_svc.NewRoomSvcStruct(
 		mongo,
 	)
 	c.message_svc = cmd_svc.NewMessageSvcStruct(
 		mongo,
 	)
+	c.timeOut = timeOut
 }
 
 func (c *ForbiddenWordsCommand) Run(args []string) {
 	// 全体のタイムアウトを100秒に設定
-	gctx, gctxCancel := context.WithTimeout(context.Background(), 100*time.Second)
+	gctx, gctxCancel := context.WithTimeout(context.Background(), time.Duration(c.timeOut)*time.Second)
 	defer gctxCancel()
 
 	g, gctx := errgroup.WithContext(gctx)
@@ -59,6 +64,7 @@ func (c *ForbiddenWordsCommand) Run(args []string) {
 			mctx := atylabmongo.NewMongoCtxSvc()
 			defer mctx.Cancel()
 			messageList, err := c.message_svc.GetMessageList(roomId, mctx)
+
 			if err != nil {
 				return err
 			}
@@ -83,5 +89,4 @@ func (c *ForbiddenWordsCommand) Run(args []string) {
 	}
 
 	fmt.Println("処理完了")
-	fmt.Println("正常に処理が完了しました")
 }

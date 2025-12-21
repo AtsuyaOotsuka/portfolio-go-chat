@@ -17,13 +17,14 @@ func TestRootSetUp(t *testing.T) {
 
 	c.Cmd.Execute()
 
-	rootCmd.AssertCalled(t, "Run")
+	rootCmd.AssertCalled(t, "Run", []string{})
 }
 
 func TestEntry(t *testing.T) {
 	expected := map[string]map[string]any{
-		"version":   {"cmd": "version"},
-		"room-list": {"cmd": "room-list"},
+		"version":         {"cmd": "version"},
+		"room-list":       {"cmd": "room-list"},
+		"forbidden-words": {"cmd": "forbidden-words"},
 	}
 
 	for name, expect := range expected {
@@ -33,14 +34,18 @@ func TestEntry(t *testing.T) {
 			rootCmd := new(command_mock.RootCommandMock)
 			versionCmd := new(command_mock.VersionCommandMock)
 			roomListCmd := new(command_mock.RoomListCommandMock)
+			forbiddenWordsCmd := new(command_mock.ForbiddenWordsCommandMock)
 
-			versionCmd.On("Run").Return()
+			versionCmd.On("Run", mock.Anything).Return()
 			roomListCmd.On("SetUp", mock.Anything).Return()
-			roomListCmd.On("Run").Return()
+			roomListCmd.On("Run", mock.Anything).Return()
+			forbiddenWordsCmd.On("SetUp", mock.Anything, mock.Anything).Return()
+			forbiddenWordsCmd.On("Run", mock.Anything).Return()
 
 			c.rootCmd = rootCmd
 			c.versionCmd = versionCmd
 			c.roomListCmd = roomListCmd
+			c.forbiddenWordsCmd = forbiddenWordsCmd
 			c.rootSetUp()
 
 			c.entry()
@@ -60,6 +65,13 @@ func TestEntry(t *testing.T) {
 			} else {
 				roomListCmd.AssertNotCalled(t, "Run")
 				roomListCmd.AssertNotCalled(t, "SetUp")
+			}
+
+			if expect["cmd"] == "forbidden-words" {
+				forbiddenWordsCmd.AssertExpectations(t)
+			} else {
+				forbiddenWordsCmd.AssertNotCalled(t, "Run")
+				forbiddenWordsCmd.AssertNotCalled(t, "SetUp")
 			}
 
 		})

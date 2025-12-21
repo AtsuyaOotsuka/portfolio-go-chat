@@ -45,7 +45,7 @@ func (c *Cmd) entry() {
 		"forbidden-words",
 		"Manage forbidden words",
 		func(args []string) {
-			c.forbiddenWordsCmd.SetUp(c.initMongo())
+			c.forbiddenWordsCmd.SetUp(c.initMongo(), 100)
 			c.forbiddenWordsCmd.Run(args)
 		},
 	)
