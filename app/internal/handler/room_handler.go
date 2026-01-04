@@ -6,8 +6,10 @@ import (
 
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/dto"
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/model"
+	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/service"
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/service/mongo_svc"
-	"github.com/AtsuyaOotsuka/portfolio-go-chat/public_lib/atylabmongo"
+	"github.com/AtsuyaOotsuka/portfolio-go-lib/atylabapi"
+	"github.com/AtsuyaOotsuka/portfolio-go-lib/atylabmongo"
 	"github.com/labstack/echo/v4"
 )
 
@@ -24,17 +26,20 @@ type RoomHandlerInterface interface {
 
 type RoomHandler struct {
 	BaseHandler
-	service mongo_svc.RoomSvcInterface
-	dto     dto.RoomDtoInterface
+	mongoRoomSvc mongo_svc.RoomSvcInterface
+	roomSvc      service.RoomSvcInterface
+	dto          dto.RoomDtoInterface
 }
 
 func NewRoomHandler(
-	service mongo_svc.RoomSvcInterface,
+	mongoRoomSvc mongo_svc.RoomSvcInterface,
+	roomSvc service.RoomSvcInterface,
 	dto dto.RoomDtoInterface,
 ) *RoomHandler {
 	return &RoomHandler{
-		service: service,
-		dto:     dto,
+		mongoRoomSvc: mongoRoomSvc,
+		roomSvc:      roomSvc,
+		dto:          dto,
 	}
 }
 
@@ -48,7 +53,7 @@ func (h *RoomHandler) List(c echo.Context) error {
 	}
 	uuid := h.GetUuid(c)
 
-	rooms, err := h.service.GetRoomList(uuid, target, ctx)
+	rooms, err := h.mongoRoomSvc.GetRoomList(uuid, target, ctx)
 	if err != nil {
 		return c.JSON(500, echo.Map{
 			"error": err.Error(),
@@ -87,7 +92,7 @@ func (h *RoomHandler) Create(c echo.Context) error {
 		IsPrivate: req.IsPrivate,
 	}
 
-	InsertedID, err := h.service.CreateRoom(room, ctx)
+	InsertedID, err := h.mongoRoomSvc.CreateRoom(room, ctx)
 	if err != nil {
 		return c.JSON(500, echo.Map{
 			"error": err.Error(),
@@ -127,7 +132,7 @@ func (h *RoomHandler) Join(c echo.Context) error {
 		})
 	}
 
-	err = h.service.JoinRoom(req.RoomID, h.GetUuid(c), ctx)
+	err = h.mongoRoomSvc.JoinRoom(req.RoomID, h.GetUuid(c), ctx)
 	if err != nil {
 		return c.JSON(500, echo.Map{
 			"error": err.Error(),
@@ -148,8 +153,18 @@ func (h *RoomHandler) Members(c echo.Context) error {
 
 	room := h.GetRoomModel(c)
 
+	ctx := atylabapi.NewApiCtxSvc()
+	defer ctx.Cancel()
+
+	members, err := h.roomSvc.GetMemberInfos(room, ctx)
+	if err != nil {
+		return c.JSON(500, echo.Map{
+			"error": err.Error(),
+		})
+	}
+
 	return c.JSON(200, echo.Map{
-		"members": room.Members,
+		"members": members,
 	})
 }
 
@@ -173,7 +188,7 @@ func (h *RoomHandler) Leave(c echo.Context) error {
 	ctx := atylabmongo.NewMongoCtxSvc()
 	defer ctx.Cancel()
 
-	err := h.service.LeaveRoom(roomID, uuid, ctx)
+	err := h.mongoRoomSvc.LeaveRoom(roomID, uuid, ctx)
 	if err != nil {
 		return c.JSON(500, echo.Map{
 			"error": err.Error(),
@@ -197,7 +212,7 @@ func (h *RoomHandler) Delete(c echo.Context) error {
 	ctx := atylabmongo.NewMongoCtxSvc()
 	defer ctx.Cancel()
 
-	err := h.service.DeleteRoom(roomID, ctx)
+	err := h.mongoRoomSvc.DeleteRoom(roomID, ctx)
 	if err != nil {
 		return c.JSON(500, echo.Map{
 			"error": err.Error(),
@@ -233,7 +248,7 @@ func (h *RoomHandler) AddMember(c echo.Context) error {
 	ctx := atylabmongo.NewMongoCtxSvc()
 	defer ctx.Cancel()
 
-	err := h.service.JoinRoom(roomID, req.MemberID, ctx)
+	err := h.mongoRoomSvc.JoinRoom(roomID, req.MemberID, ctx)
 	if err != nil {
 		return c.JSON(500, echo.Map{
 			"error": err.Error(),
@@ -269,7 +284,7 @@ func (h *RoomHandler) RemoveMember(c echo.Context) error {
 	ctx := atylabmongo.NewMongoCtxSvc()
 	defer ctx.Cancel()
 
-	err := h.service.LeaveRoom(roomID, req.MemberID, ctx)
+	err := h.mongoRoomSvc.LeaveRoom(roomID, req.MemberID, ctx)
 	if err != nil {
 		return c.JSON(500, echo.Map{
 			"error": err.Error(),

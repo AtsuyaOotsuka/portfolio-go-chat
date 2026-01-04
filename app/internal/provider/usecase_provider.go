@@ -2,7 +2,7 @@ package provider
 
 import (
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/usecase"
-	"github.com/AtsuyaOotsuka/portfolio-go-chat/public_lib/atylabmongo"
+	"github.com/AtsuyaOotsuka/portfolio-go-lib/atylabmongo"
 )
 
 func (p *Provider) bindMongoSvc() *usecase.MongoUseCaseStruct {

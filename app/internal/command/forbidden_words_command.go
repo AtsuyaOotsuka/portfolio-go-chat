@@ -7,7 +7,7 @@ import (
 
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/service/cmd_svc"
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/usecase"
-	"github.com/AtsuyaOotsuka/portfolio-go-chat/public_lib/atylabmongo"
+	"github.com/AtsuyaOotsuka/portfolio-go-lib/atylabmongo"
 	"golang.org/x/sync/errgroup"
 )
 

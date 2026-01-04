@@ -3,7 +3,7 @@ package middleware
 import (
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/consts"
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/service"
-	"github.com/AtsuyaOotsuka/portfolio-go-chat/public_lib/atylabmongo"
+	"github.com/AtsuyaOotsuka/portfolio-go-lib/atylabmongo"
 	"github.com/labstack/echo/v4"
 )
 

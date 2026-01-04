@@ -129,11 +129,11 @@ func TestRoomList(t *testing.T) {
 	mongoHelper.MongoCleanUp()
 
 	variations := []model.Room{
-		{Name: "PrivateRoom_Owner", OwnerID: "usertest-uuid", IsPrivate: true, Members: []string{"usertest-uuid", "99999"}},
-		{Name: "PrivateRoom_Member", OwnerID: "99999", IsPrivate: true, Members: []string{"99999", "usertest-uuid"}},
+		{Name: "PrivateRoom_Owner", OwnerID: "test-uuid", IsPrivate: true, Members: []string{"test-uuid", "99999"}},
+		{Name: "PrivateRoom_Member", OwnerID: "99999", IsPrivate: true, Members: []string{"99999", "test-uuid"}},
 		{Name: "PrivateRoom_None", OwnerID: "88888", IsPrivate: true, Members: []string{"88888"}},
 		{Name: "PublicRoom_None", OwnerID: "77777", IsPrivate: false, Members: []string{"77777"}},
-		{Name: "PublicRoom_Joined", OwnerID: "66666", IsPrivate: false, Members: []string{"66666", "usertest-uuid"}},
+		{Name: "PublicRoom_Joined", OwnerID: "66666", IsPrivate: false, Members: []string{"66666", "test-uuid"}},
 	}
 
 	for i := range variations {
@@ -282,7 +282,7 @@ func TestRoomJoin(t *testing.T) {
 	err = singleResult.Decode(&updatedRoom)
 	assert.NoError(t, err)
 
-	assert.Contains(t, updatedRoom.Members, "user"+uuid)
+	assert.Contains(t, updatedRoom.Members, uuid)
 }
 
 func TestRoomMembers(t *testing.T) {
@@ -293,7 +293,7 @@ func TestRoomMembers(t *testing.T) {
 		Name:      "Member List Room",
 		OwnerID:   "owner-uuid",
 		IsPrivate: false,
-		Members:   []string{"owner-uuid", "usertest-uuid"},
+		Members:   []string{"owner-uuid", "test-uuid"},
 		CreatedAt: time.Now(),
 	}
 	roomID, err := mongoHelper.Insert(
@@ -319,7 +319,7 @@ func TestRoomMembers(t *testing.T) {
 	err = json.Unmarshal(bodyBytes, &result)
 	assert.NoError(t, err)
 	assert.Contains(t, result["members"], "owner-uuid")
-	assert.Contains(t, result["members"], "usertest-uuid")
+	assert.Contains(t, result["members"], "test-uuid")
 }
 
 func TestRoomLeave(t *testing.T) {
@@ -330,7 +330,7 @@ func TestRoomLeave(t *testing.T) {
 		Name:      "Leave Room",
 		OwnerID:   "owner-uuid",
 		IsPrivate: false,
-		Members:   []string{"owner-uuid", "usertest-uuid"},
+		Members:   []string{"owner-uuid", "test-uuid"},
 		CreatedAt: time.Now(),
 	}
 	roomID, err := mongoHelper.Insert(
@@ -367,7 +367,7 @@ func TestRoomLeave(t *testing.T) {
 	err = singleResult.Decode(&updatedRoom)
 	assert.NoError(t, err)
 
-	assert.NotContains(t, updatedRoom.Members, "usertest-uuid")
+	assert.NotContains(t, updatedRoom.Members, "test-uuid")
 }
 
 func TestRoomDelete(t *testing.T) {
@@ -376,9 +376,9 @@ func TestRoomDelete(t *testing.T) {
 
 	room := model.Room{
 		Name:      "Deletable Room",
-		OwnerID:   "usertest-uuid",
+		OwnerID:   "test-uuid",
 		IsPrivate: false,
-		Members:   []string{"usertest-uuid"},
+		Members:   []string{"test-uuid"},
 		CreatedAt: time.Now(),
 	}
 	roomID, err := mongoHelper.Insert(
@@ -420,9 +420,9 @@ func TestRoomAddMember(t *testing.T) {
 
 	room := model.Room{
 		Name:      "Add Member Room",
-		OwnerID:   "usertest-uuid",
+		OwnerID:   "test-uuid",
 		IsPrivate: false,
-		Members:   []string{"usertest-uuid"},
+		Members:   []string{"test-uuid"},
 		CreatedAt: time.Now(),
 	}
 	roomID, err := mongoHelper.Insert(
@@ -462,7 +462,7 @@ func TestRoomAddMember(t *testing.T) {
 	err = singleResult.Decode(&updatedRoom)
 	assert.NoError(t, err)
 
-	assert.Contains(t, updatedRoom.Members, "user"+uuid)
+	assert.Contains(t, updatedRoom.Members, ""+uuid)
 }
 
 func TestRoomRemoveMember(t *testing.T) {
@@ -471,9 +471,9 @@ func TestRoomRemoveMember(t *testing.T) {
 
 	room := model.Room{
 		Name:      "Remove Member Room",
-		OwnerID:   "usertest-uuid",
+		OwnerID:   "test-uuid",
 		IsPrivate: false,
-		Members:   []string{"usertest-uuid", "test-uuid"},
+		Members:   []string{"test-uuid", "test-uuid"},
 		CreatedAt: time.Now(),
 	}
 	roomID, err := mongoHelper.Insert(
@@ -522,9 +522,9 @@ func TestMessageList(t *testing.T) {
 
 	room := model.Room{
 		Name:      "Message List Room",
-		OwnerID:   "usertest-uuid",
+		OwnerID:   "test-uuid",
 		IsPrivate: false,
-		Members:   []string{"usertest-uuid", "test-uuid"},
+		Members:   []string{"test-uuid", "test-uuid"},
 		CreatedAt: time.Now(),
 	}
 	roomID, err := mongoHelper.Insert(
@@ -534,7 +534,7 @@ func TestMessageList(t *testing.T) {
 	assert.NoError(t, err)
 
 	messages := []model.Message{
-		{RoomID: roomID, Sender: "usertest-uuid", Message: "Hello!", CreatedAt: time.Now()},
+		{RoomID: roomID, Sender: "test-uuid", Message: "Hello!", CreatedAt: time.Now()},
 		{RoomID: roomID, Sender: "test-uuid", Message: "Hi there!", CreatedAt: time.Now()},
 	}
 	for _, msg := range messages {
@@ -571,9 +571,9 @@ func TestMessageSend(t *testing.T) {
 
 	room := model.Room{
 		Name:      "Message Send Room",
-		OwnerID:   "usertest-uuid",
+		OwnerID:   "test-uuid",
 		IsPrivate: false,
-		Members:   []string{"usertest-uuid", "test-uuid"},
+		Members:   []string{"test-uuid", "test-uuid"},
 		CreatedAt: time.Now(),
 	}
 	roomID, err := mongoHelper.Insert(
@@ -614,9 +614,9 @@ func TestMessageRead(t *testing.T) {
 
 	room := model.Room{
 		Name:      "Message Read Room",
-		OwnerID:   "usertest-uuid",
+		OwnerID:   "test-uuid",
 		IsPrivate: false,
-		Members:   []string{"usertest-uuid", "sender-test-uuid"},
+		Members:   []string{"test-uuid", "sender-test-uuid"},
 		CreatedAt: time.Now(),
 	}
 	roomID, err := mongoHelper.Insert(
@@ -668,7 +668,7 @@ func TestMessageRead(t *testing.T) {
 	err = singleResult.Decode(&updatedMessage)
 	assert.NoError(t, err)
 
-	assert.Contains(t, updatedMessage.IsReadUserIds, "user"+uuid)
+	assert.Contains(t, updatedMessage.IsReadUserIds, ""+uuid)
 }
 
 func TestMessageDelete(t *testing.T) {
@@ -677,9 +677,9 @@ func TestMessageDelete(t *testing.T) {
 
 	room := model.Room{
 		Name:      "Message Delete Room",
-		OwnerID:   "usertest-uuid",
+		OwnerID:   "test-uuid",
 		IsPrivate: false,
-		Members:   []string{"usertest-uuid", "sender-test-uuid"},
+		Members:   []string{"test-uuid", "sender-test-uuid"},
 		CreatedAt: time.Now(),
 	}
 	roomID, err := mongoHelper.Insert(
