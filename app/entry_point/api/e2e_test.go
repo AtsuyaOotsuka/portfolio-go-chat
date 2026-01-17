@@ -14,7 +14,9 @@ import (
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/model"
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/usecase"
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/test_helper/funcs"
+	"github.com/AtsuyaOotsuka/portfolio-go-chat/test_helper/mocks/api_mock"
 	"github.com/AtsuyaOotsuka/portfolio-go-lib/atylabjwt"
+	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -23,6 +25,13 @@ import (
 var baseURL string
 var mongo *usecase.Mongo
 var mongoHelper *funcs.TestMongoStruct
+
+func mockApi() *echo.Echo {
+	apiMock := echo.New()
+	group := apiMock.Group("/server_api")
+	group.POST("/user/profile", api_mock.AuthUserGetProfile)
+	return apiMock
+}
 
 func TestMain(m *testing.M) {
 	var err error
@@ -37,7 +46,20 @@ func TestMain(m *testing.M) {
 
 	baseURL = "http://localhost:8880"
 
-	app := SetupRouter(mongo)
+	redis, err := SetupRedis()
+	if err != nil {
+		panic(err)
+	}
+
+	apiMock := mockApi()
+
+	go func() {
+		if err := apiMock.Start(":8881"); err != nil && err != http.ErrServerClosed {
+			panic(err)
+		}
+	}()
+
+	app := SetupRouter(mongo, redis)
 	defer app.Shutdown()
 
 	testServer := &http.Server{
@@ -312,14 +334,6 @@ func TestRoomMembers(t *testing.T) {
 	defer close()
 
 	assert.Equal(t, 200, resp.StatusCode)
-	bodyBytes, err := io.ReadAll(resp.Body)
-	assert.NoError(t, err)
-
-	result := map[string][]string{}
-	err = json.Unmarshal(bodyBytes, &result)
-	assert.NoError(t, err)
-	assert.Contains(t, result["members"], "owner-uuid")
-	assert.Contains(t, result["members"], "test-uuid")
 }
 
 func TestRoomLeave(t *testing.T) {

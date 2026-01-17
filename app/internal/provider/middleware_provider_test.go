@@ -7,7 +7,7 @@ import (
 )
 
 func TestBindBindCsrfMiddleware(t *testing.T) {
-	provider := NewProvider(usecase.NewMongo())
+	provider := NewProvider(usecase.NewMongo(), usecase.NewRedis())
 	csrfMiddleware := provider.BindCsrfMiddleware()
 
 	if csrfMiddleware == nil {
@@ -16,7 +16,7 @@ func TestBindBindCsrfMiddleware(t *testing.T) {
 }
 
 func TestBindJwtMiddleware(t *testing.T) {
-	provider := NewProvider(usecase.NewMongo())
+	provider := NewProvider(usecase.NewMongo(), usecase.NewRedis())
 	jwtMiddleware := provider.BindJwtMiddleware()
 
 	if jwtMiddleware == nil {
@@ -25,7 +25,7 @@ func TestBindJwtMiddleware(t *testing.T) {
 }
 
 func TestBindRoomMiddleware(t *testing.T) {
-	provider := NewProvider(usecase.NewMongo())
+	provider := NewProvider(usecase.NewMongo(), usecase.NewRedis())
 	roomMiddleware := provider.BindRoomMiddleware()
 
 	if roomMiddleware == nil {

@@ -317,11 +317,18 @@ func TestRoomMembers(t *testing.T) {
 	expected := map[string]map[string]any{
 		"success": {
 			"status":   200,
+			"error":    nil,
 			"IsMember": true,
 		},
 		"validation error (not a member)": {
 			"status":   400,
+			"error":    nil,
 			"IsMember": false,
+		},
+		"failure to get member infos": {
+			"status":   500,
+			"error":    fmt.Errorf("GetMemberInfos error"),
+			"IsMember": true,
 		},
 	}
 
@@ -351,6 +358,19 @@ func TestRoomMembers(t *testing.T) {
 			dto := dto.NewRoomDtoStruct()
 			mongoSvcMock := new(mongo_svc_mock.RoomSvcMock)
 			roomSvcMock := new(svc_mock.RoomSvcMock)
+			roomSvcMock.On("GetMemberInfos", room, mock.Anything).Return(
+				[]model.RoomMember{
+					{
+						Uuid:  "test-uuid",
+						Name:  "Test User",
+						Email: "test@example.com",
+					},
+					{
+						Uuid:  "owner-uuid",
+						Name:  "Owner User",
+						Email: "owner@example.com",
+					},
+				}, expect["error"]).Once()
 
 			handler := NewRoomHandler(mongoSvcMock, roomSvcMock, dto)
 			err := handler.Members(c)
@@ -369,8 +389,10 @@ func TestRoomMembers(t *testing.T) {
 			assert.NoError(t, err)
 
 			assert.Len(t, result["members"], 2)
-			assert.Equal(t, "test-uuid-1234", result["members"][0])
-			assert.Equal(t, "another-uuid-91011", result["members"][1])
+			assert.Equal(t, "Test User", result["members"][0].(map[string]interface{})["name"])
+			assert.Equal(t, "Owner User", result["members"][1].(map[string]interface{})["name"])
+
+			roomSvcMock.AssertExpectations(t)
 		})
 	}
 }

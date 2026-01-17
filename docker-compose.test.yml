@@ -20,3 +20,7 @@ services:
     env_file:
       - .env.test
 
+  chat_service_redis_test:
+    image: redis:7
+    container_name: chat_service_redis_test
+    restart: unless-stopped

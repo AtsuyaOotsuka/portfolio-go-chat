@@ -29,6 +29,7 @@ func (p *Provider) bindCsrfSvc() service.CsrfSvcInterface {
 
 func (p *Provider) bindRoomSvc() service.RoomSvcInterface {
 	return service.NewRoomSvc(
+		p.bindRedisSvc(),
 		p.bindMongoRoomSvc(),
 		atylabapi.NewApiPostStruct(
 			os.Getenv("COMMON_KEY"),
