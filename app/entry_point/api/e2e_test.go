@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -32,6 +33,18 @@ func mockApi() *echo.Echo {
 	group.POST("/user/profile", api_mock.AuthUserGetProfile)
 	return apiMock
 }
+func waitForServer(addr string, timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		conn, err := net.DialTimeout("tcp", addr, 100*time.Millisecond)
+		if err == nil {
+			conn.Close()
+			return nil
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	return fmt.Errorf("timeout waiting for %s", addr)
+}
 
 func TestMain(m *testing.M) {
 	var err error
@@ -44,7 +57,7 @@ func TestMain(m *testing.M) {
 	mongoHelper = funcs.SetUpMongoTestDatabase()
 	defer mongoHelper.Disconnect()
 
-	baseURL = "http://localhost:8880"
+	baseURL = "http://127.0.0.1:8880"
 
 	redis, err := SetupRedis()
 	if err != nil {
@@ -54,7 +67,7 @@ func TestMain(m *testing.M) {
 	apiMock := mockApi()
 
 	go func() {
-		if err := apiMock.Start(":8881"); err != nil && err != http.ErrServerClosed {
+		if err := apiMock.Start("127.0.0.1:8881"); err != nil && err != http.ErrServerClosed {
 			panic(err)
 		}
 	}()
@@ -63,7 +76,7 @@ func TestMain(m *testing.M) {
 	defer app.Shutdown()
 
 	testServer := &http.Server{
-		Addr: ":8880",
+		Addr: "127.0.0.1:8880",
 	}
 
 	go func() {
@@ -73,7 +86,12 @@ func TestMain(m *testing.M) {
 	}()
 	defer testServer.Close()
 
-	time.Sleep(200 * time.Millisecond)
+	if err := waitForServer("127.0.0.1:8881", 5*time.Second); err != nil {
+		panic(err)
+	}
+	if err := waitForServer("127.0.0.1:8880", 5*time.Second); err != nil {
+		panic(err)
+	}
 
 	exitCode := m.Run()
 	if err := testServer.Shutdown(context.Background()); err != nil {
