@@ -12,7 +12,7 @@ executors:
           MONGO_USER: root
           MONGO_PASS: example
           COMMON_KEY: commonkeyvalue12345
-          API_BASE_URL: http://127.0.0.1:8880
+          API_BASE_URL: http://127.0.0.1:8881
           REDIS_ADDR: 127.0.0.1:6379
           REDIS_PASS: ""
           REDIS_DB: 0

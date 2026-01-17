@@ -1,7 +1,6 @@
 package provider
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/service"
@@ -29,11 +28,6 @@ func (p *Provider) bindCsrfSvc() service.CsrfSvcInterface {
 }
 
 func (p *Provider) bindRoomSvc() service.RoomSvcInterface {
-	fmt.Print(
-		os.Getenv("COMMON_KEY"),
-		os.Getenv("API_BASE_URL"),
-	)
-
 	return service.NewRoomSvc(
 		p.bindRedisSvc(),
 		p.bindMongoRoomSvc(),
