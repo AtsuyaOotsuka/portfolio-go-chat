@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net"
 	"net/http"
 	"os"
@@ -29,6 +30,17 @@ var mongoHelper *funcs.TestMongoStruct
 
 func mockApi() *echo.Echo {
 	apiMock := echo.New()
+	apiMock.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			log.Printf(
+				"[MOCK API] %s %s",
+				c.Request().Method,
+				c.Request().URL.Path,
+			)
+			return next(c)
+		}
+	})
+
 	group := apiMock.Group("/server_api")
 	group.POST("/user/profile", api_mock.AuthUserGetProfile)
 	return apiMock
