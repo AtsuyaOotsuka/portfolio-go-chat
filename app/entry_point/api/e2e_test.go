@@ -44,7 +44,7 @@ func TestMain(m *testing.M) {
 	mongoHelper = funcs.SetUpMongoTestDatabase()
 	defer mongoHelper.Disconnect()
 
-	baseURL = "http://localhost:8880"
+	baseURL = "http://127.0.0.1:8880"
 
 	redis, err := SetupRedis()
 	if err != nil {
