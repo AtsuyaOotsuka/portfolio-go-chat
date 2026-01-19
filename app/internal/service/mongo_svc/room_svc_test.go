@@ -5,8 +5,8 @@ import (
 
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/model"
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/usecase"
-	"github.com/AtsuyaOotsuka/portfolio-go-chat/public_lib/atylabmongo"
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/test_helper/funcs"
+	"github.com/AtsuyaOotsuka/portfolio-go-lib/atylabmongo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"go.mongodb.org/mongo-driver/bson"
@@ -61,11 +61,11 @@ func TestGetRooms(t *testing.T) {
 					filter = bson.M{
 						"$or": []bson.M{
 							{"is_private": false},
-							{"members": "user123"},
+							{"members": "123"},
 						},
 					}
 				} else {
-					filter = bson.M{"members": "user123"} // 参加済みのものだけ
+					filter = bson.M{"members": "123"} // 参加済みのものだけ
 				}
 
 				if tt.findOneErr {
@@ -90,7 +90,7 @@ func TestGetRooms(t *testing.T) {
 
 				roomSvc := NewRoomSvcStruct(mongoUseCase)
 
-				rooms, err := roomSvc.GetRoomList("user123", tt.request, atylabmongo.NewMongoCtxSvc())
+				rooms, err := roomSvc.GetRoomList("123", tt.request, atylabmongo.NewMongoCtxSvc())
 				if (err != nil) != tt.returnErr {
 					t.Errorf("GetRooms() [%s] error = %v, initErr %v", tt.name, err, tt.initErr)
 				}
@@ -253,7 +253,7 @@ func TestJoinRoom(t *testing.T) {
 				mongoUseCase := usecase.NewMongoUseCaseStruct(mongoConnectionStructMock, usecase.NewMongo())
 				roomSvc := NewRoomSvcStruct(mongoUseCase)
 
-				err := roomSvc.JoinRoom(tt.request, "user123", atylabmongo.NewMongoCtxSvc())
+				err := roomSvc.JoinRoom(tt.request, "123", atylabmongo.NewMongoCtxSvc())
 				if (err != nil) != tt.returnErr {
 					t.Errorf("JoinRoom() [%s] error = %v, initErr %v", tt.name, err, tt.initErr)
 				}
@@ -300,7 +300,7 @@ func TestLeaveRoom(t *testing.T) {
 				mongoUseCase := usecase.NewMongoUseCaseStruct(mongoConnectionStructMock, usecase.NewMongo())
 				roomSvc := NewRoomSvcStruct(mongoUseCase)
 
-				err := roomSvc.LeaveRoom(tt.roomId, "user123", atylabmongo.NewMongoCtxSvc())
+				err := roomSvc.LeaveRoom(tt.roomId, "123", atylabmongo.NewMongoCtxSvc())
 				if (err != nil) != tt.returnErr {
 					t.Errorf("LeaveRoom() [%s] error = %v, initErr %v", tt.name, err, tt.initErr)
 				}

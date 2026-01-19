@@ -7,7 +7,7 @@ import (
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/dto"
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/model"
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/service/mongo_svc"
-	"github.com/AtsuyaOotsuka/portfolio-go-chat/public_lib/atylabmongo"
+	"github.com/AtsuyaOotsuka/portfolio-go-lib/atylabmongo"
 	"github.com/labstack/echo/v4"
 )
 

@@ -2,7 +2,7 @@ package mongo_svc_mock
 
 import (
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/model"
-	"github.com/AtsuyaOotsuka/portfolio-go-chat/public_lib/atylabmongo"
+	"github.com/AtsuyaOotsuka/portfolio-go-lib/atylabmongo"
 	"github.com/stretchr/testify/mock"
 )
 

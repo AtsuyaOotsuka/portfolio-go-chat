@@ -5,8 +5,8 @@ import (
 
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/model"
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/usecase"
-	"github.com/AtsuyaOotsuka/portfolio-go-chat/public_lib/atylabmongo"
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/test_helper/funcs"
+	"github.com/AtsuyaOotsuka/portfolio-go-lib/atylabmongo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"go.mongodb.org/mongo-driver/bson"
@@ -56,7 +56,7 @@ func TestSendMessage(t *testing.T) {
 
 				message := model.Message{
 					RoomID:  "room1",
-					Sender:  "user1",
+					Sender:  "1",
 					Message: "Hello, World!",
 				}
 
@@ -186,7 +186,7 @@ func TestReadMessages(t *testing.T) {
 
 				messageIds := []string{"60c72b2f9b1d4c3d88f0e6b1", tt.id}
 				roomId := "room1"
-				userId := "user1"
+				userId := "1"
 
 				err := messageSvc.ReadMessages(messageIds, roomId, userId, atylabmongo.NewMongoCtxSvc())
 				if (err != nil) != tt.returnErr {
@@ -212,10 +212,10 @@ func TestIsSender(t *testing.T) {
 			findOneErr bool
 			returnErr  bool
 		}{
-			{"success", "60c72b2f9b1d4c3d88f0e6b1", "room1", "user1", false, false, false},
-			{"ObjectIDFromHex_error", "invalid_id", "room1", "user1", false, false, true},
-			{"initErr", "60c72b2f9b1d4c3d88f0e6b1", "room1", "user1", true, false, true},
-			{"findone_error", "60c72b2f9b1d4c3d88f0e6b1", "room1", "user1", false, true, true},
+			{"success", "60c72b2f9b1d4c3d88f0e6b1", "room1", "1", false, false, false},
+			{"ObjectIDFromHex_error", "invalid_id", "room1", "1", false, false, true},
+			{"initErr", "60c72b2f9b1d4c3d88f0e6b1", "room1", "1", true, false, true},
+			{"findone_error", "60c72b2f9b1d4c3d88f0e6b1", "room1", "1", false, true, true},
 		}
 
 		for _, tt := range tests {

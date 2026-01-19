@@ -11,6 +11,8 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: example
+    networks:
+      - atylab_net
 
   chat_service_app:
     build:
@@ -21,6 +23,27 @@ services:
       - "127.0.0.1:8081:8080"
     env_file:
       - .env
+    networks:
+      - atylab_net
+
+  chat_service_cmd:
+    build:
+      context: .
+      dockerfile: docker/cmd/Dockerfile
+    container_name: chat_service_cmd
+    env_file:
+      - .env
+    networks:
+      - atylab_net
+
+  chat_service_redis:
+    image: redis:7
+    container_name: chat_service_redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+    networks:
+      - atylab_net
 
   chat_service_cmd:
     build:
@@ -32,3 +55,7 @@ services:
 
 volumes:
   chat_service_mongo_data:
+
+networks:
+  atylab_net:
+    external: true

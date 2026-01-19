@@ -8,16 +8,16 @@ import (
 
 func (a *App) initProviders(
 	mongo *usecase.Mongo,
+	redis *usecase.Redis,
 ) {
 	a.provider = provider.NewProvider(
 		mongo,
+		redis,
 	)
 
 }
 
-func (a *App) initMiddlewares(
-	mongo *usecase.Mongo,
-) {
+func (a *App) initMiddlewares() {
 	// ミドルウェアの初期化
 	a.middleware = &middleware.Middleware{
 		Csrf: a.provider.BindCsrfMiddleware().Handler(),

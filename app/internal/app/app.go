@@ -14,6 +14,7 @@ type App struct {
 	middleware *middleware.Middleware
 	provider   *provider.Provider
 	mongo      *usecase.Mongo
+	redis      *usecase.Redis
 }
 
 func NewApp() *App {
@@ -23,11 +24,13 @@ func NewApp() *App {
 func (a *App) Init(
 	e *echo.Echo,
 	mongo *usecase.Mongo,
+	redis *usecase.Redis,
 ) {
 	a.Echo = e
 	a.mongo = mongo
-	a.initProviders(mongo)
-	a.initMiddlewares(mongo)
+	a.redis = redis
+	a.initProviders(mongo, redis)
+	a.initMiddlewares()
 	a.entryGlobalMiddleware()
 	a.entryRoutes()
 }

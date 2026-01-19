@@ -22,7 +22,7 @@ func TestNewAppAndInitRoutes(t *testing.T) {
 
 		// App生成とルート初期化
 		a := app.NewApp()
-		a.Init(echo, usecase.NewMongo())
+		a.Init(echo, usecase.NewMongo(), usecase.NewRedis())
 
 		echo.Shutdown(context.Background())
 
@@ -56,7 +56,7 @@ func TestAppShutdown(t *testing.T) {
 
 	// App生成とルート初期化
 	a := app.NewApp()
-	a.Init(echo, usecase.NewMongo())
+	a.Init(echo, usecase.NewMongo(), usecase.NewRedis())
 
 	// シャットダウン処理の呼び出し
 	a.Shutdown()

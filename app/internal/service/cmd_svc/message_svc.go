@@ -7,7 +7,7 @@ import (
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/consts"
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/model"
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/usecase"
-	"github.com/AtsuyaOotsuka/portfolio-go-chat/public_lib/atylabmongo"
+	"github.com/AtsuyaOotsuka/portfolio-go-lib/atylabmongo"
 	"go.mongodb.org/mongo-driver/bson"
 )
 

@@ -8,7 +8,8 @@ docker compose -f $COMPOSE_FILE -p $PROJECT_NAME build chat_service_app_test
 
 docker compose -f $COMPOSE_FILE -p $PROJECT_NAME up -d \
   chat_service_mongo_test \
-  chat_service_app_test
+  chat_service_app_test \
+  chat_service_redis_test
 
 # Mongo ready wait
 echo "Waiting for MongoDB..."
