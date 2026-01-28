@@ -5,8 +5,8 @@ import (
 
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/app"
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/usecase"
-	"github.com/AtsuyaOotsuka/portfolio-go-chat/public_lib/atylabredis"
 	"github.com/AtsuyaOotsuka/portfolio-go-lib/atylabmongo"
+	"github.com/AtsuyaOotsuka/portfolio-go-lib/atylabredis"
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 )

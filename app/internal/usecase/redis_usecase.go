@@ -5,7 +5,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/AtsuyaOotsuka/portfolio-go-chat/public_lib/atylabredis"
+	"github.com/AtsuyaOotsuka/portfolio-go-lib/atylabredis"
 )
 
 type RedisUseCaseInterface interface {

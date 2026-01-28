@@ -3,8 +3,8 @@ package usecase
 import (
 	"testing"
 
-	"github.com/AtsuyaOotsuka/portfolio-go-chat/public_lib/atylabredis"
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/test_helper/funcs"
+	"github.com/AtsuyaOotsuka/portfolio-go-lib/atylabredis"
 	"github.com/stretchr/testify/assert"
 )
 

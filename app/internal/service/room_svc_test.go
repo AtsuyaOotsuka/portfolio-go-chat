@@ -5,10 +5,10 @@ import (
 
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/model"
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/usecase"
-	"github.com/AtsuyaOotsuka/portfolio-go-chat/public_lib/atylabredis"
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/test_helper/mocks/svc_mock/mongo_svc_mock"
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/test_helper/mocks/usecase_mock"
 	"github.com/AtsuyaOotsuka/portfolio-go-lib/atylabapi"
+	"github.com/AtsuyaOotsuka/portfolio-go-lib/atylabredis"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"go.mongodb.org/mongo-driver/bson/primitive"
