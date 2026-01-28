@@ -7,7 +7,7 @@ import (
 )
 
 func TestBindHealthCheckHandler(t *testing.T) {
-	provider := NewProvider(usecase.NewMongo())
+	provider := NewProvider(usecase.NewMongo(), usecase.NewRedis())
 	healthCheckHandler := provider.BindHealthCheckHandler()
 
 	if healthCheckHandler == nil {
@@ -16,7 +16,7 @@ func TestBindHealthCheckHandler(t *testing.T) {
 }
 
 func TestBindRoomHandler(t *testing.T) {
-	provider := NewProvider(usecase.NewMongo())
+	provider := NewProvider(usecase.NewMongo(), usecase.NewRedis())
 	roomHandler := provider.BindRoomHandler()
 
 	if roomHandler == nil {
@@ -25,7 +25,7 @@ func TestBindRoomHandler(t *testing.T) {
 }
 
 func TestBindMessageHandler(t *testing.T) {
-	provider := NewProvider(usecase.NewMongo())
+	provider := NewProvider(usecase.NewMongo(), usecase.NewRedis())
 	messageHandler := provider.BindMessageHandler()
 
 	if messageHandler == nil {

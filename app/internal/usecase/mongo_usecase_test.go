@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/AtsuyaOotsuka/portfolio-go-chat/public_lib/atylabmongo"
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/test_helper/funcs"
+	"github.com/AtsuyaOotsuka/portfolio-go-lib/atylabmongo"
 )
 
 func TestNewMongoUseCaseStruct(t *testing.T) {

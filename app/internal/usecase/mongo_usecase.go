@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/AtsuyaOotsuka/portfolio-go-chat/public_lib/atylabmongo"
+	"github.com/AtsuyaOotsuka/portfolio-go-lib/atylabmongo"
 )
 
 type MongoUseCaseInterface interface {

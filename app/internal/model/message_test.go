@@ -10,17 +10,17 @@ func TestMessageModel(t *testing.T) {
 
 	message := Message{
 		RoomID:        "room123",
-		Sender:        "user456",
+		Sender:        "456",
 		Message:       "Hello, World!",
 		CreatedAt:     timeNow,
-		IsReadUserIds: []string{"user789", "user101"},
+		IsReadUserIds: []string{"789", "101"},
 	}
 
 	if message.RoomID != "room123" {
 		t.Errorf("Expected RoomID to be 'room123', got %s", message.RoomID)
 	}
 
-	if message.Sender != "user456" {
+	if message.Sender != "456" {
 		t.Errorf("Expected Sender to be 'user456', got %s", message.Sender)
 	}
 

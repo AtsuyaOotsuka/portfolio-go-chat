@@ -1,8 +1,8 @@
 package cmd_svc
 
 import (
-	"github.com/AtsuyaOotsuka/portfolio-go-chat/public_lib/atylabmongo"
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/test_helper/funcs"
+	"github.com/AtsuyaOotsuka/portfolio-go-lib/atylabmongo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )

@@ -12,6 +12,7 @@ import (
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/dto"
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/model"
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/internal/usecase"
+	"github.com/AtsuyaOotsuka/portfolio-go-chat/test_helper/mocks/svc_mock"
 	"github.com/AtsuyaOotsuka/portfolio-go-chat/test_helper/mocks/svc_mock/mongo_svc_mock"
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
@@ -67,7 +68,8 @@ func TestRoomList(t *testing.T) {
 			c.Set("uuid", "test-uuid-1234")
 
 			dto := dto.NewRoomDtoStruct()
-			svcMock := new(mongo_svc_mock.RoomSvcMock)
+			mongoSvcMock := new(mongo_svc_mock.RoomSvcMock)
+			roomSvcMock := new(svc_mock.RoomSvcMock)
 
 			returnData := []model.Room{
 				{
@@ -96,9 +98,9 @@ func TestRoomList(t *testing.T) {
 				returnErr = fmt.Errorf("GetRoomList error")
 			}
 
-			svcMock.On("GetRoomList", "test-uuid-1234", expect["expect_target"].(string), mock.Anything).Return(returnData, returnErr).Times(expect["GetRoomListCalled"].(int))
+			mongoSvcMock.On("GetRoomList", "test-uuid-1234", expect["expect_target"].(string), mock.Anything).Return(returnData, returnErr).Times(expect["GetRoomListCalled"].(int))
 
-			handler := NewRoomHandler(svcMock, dto)
+			handler := NewRoomHandler(mongoSvcMock, roomSvcMock, dto)
 			err = handler.List(c)
 
 			if err != nil {
@@ -106,7 +108,7 @@ func TestRoomList(t *testing.T) {
 			}
 
 			assert.Equal(t, expect["status"].(int), rec.Code)
-			svcMock.AssertExpectations(t)
+			mongoSvcMock.AssertExpectations(t)
 
 			if expect["status"].(int) != http.StatusOK {
 				return
@@ -187,13 +189,14 @@ func TestRoomCreate(t *testing.T) {
 				returnErr = fmt.Errorf("CreateRoom error")
 			}
 
-			svcMock := new(mongo_svc_mock.RoomSvcMock)
+			mongoSvcMock := new(mongo_svc_mock.RoomSvcMock)
+			roomSvcMock := new(svc_mock.RoomSvcMock)
 
 			if expect["createRoomCalled"].(int) != 0 {
-				svcMock.On("CreateRoom", mock.AnythingOfType("model.Room"), mock.Anything).Return(roomId, returnErr).Times(expect["createRoomCalled"].(int))
+				mongoSvcMock.On("CreateRoom", mock.AnythingOfType("model.Room"), mock.Anything).Return(roomId, returnErr).Times(expect["createRoomCalled"].(int))
 			}
 
-			handler := NewRoomHandler(svcMock, dto)
+			handler := NewRoomHandler(mongoSvcMock, roomSvcMock, dto)
 			err := handler.Create(c)
 			if err != nil {
 				t.Fatalf("Expected no error, got %v", err)
@@ -202,9 +205,9 @@ func TestRoomCreate(t *testing.T) {
 			assert.Equal(t, expect["status"].(int), rec.Code)
 
 			if expect["createRoomCalled"].(int) == 0 {
-				svcMock.AssertNotCalled(t, "CreateRoom")
+				mongoSvcMock.AssertNotCalled(t, "CreateRoom")
 			} else {
-				svcMock.AssertExpectations(t)
+				mongoSvcMock.AssertExpectations(t)
 			}
 
 			if expect["status"].(int) != http.StatusOK {
@@ -282,16 +285,18 @@ func TestRoomJoin(t *testing.T) {
 			c.Set("is_member", expect["is_member"].(bool))
 
 			dto := dto.NewRoomDtoStruct()
-			svcMock := new(mongo_svc_mock.RoomSvcMock)
+			mongoSvcMock := new(mongo_svc_mock.RoomSvcMock)
+			roomSvcMock := new(svc_mock.RoomSvcMock)
+
 			if expect["JoinRoomCalled"].(int) != 0 {
 				var returnErr error = nil
 				if !expect["JoinRoomSuccess"].(bool) {
 					returnErr = fmt.Errorf("JoinRoom error")
 				}
-				svcMock.On("JoinRoom", "existing-room-id-1234", "test-uuid-1234", mock.Anything).Return(returnErr).Times(expect["JoinRoomCalled"].(int))
+				mongoSvcMock.On("JoinRoom", "existing-room-id-1234", "test-uuid-1234", mock.Anything).Return(returnErr).Times(expect["JoinRoomCalled"].(int))
 			}
 
-			handler := NewRoomHandler(svcMock, dto)
+			handler := NewRoomHandler(mongoSvcMock, roomSvcMock, dto)
 			err := handler.Join(c)
 			if err != nil {
 				t.Fatalf("Expected no error, got %v", err)
@@ -300,9 +305,9 @@ func TestRoomJoin(t *testing.T) {
 			assert.Equal(t, expect["status"].(int), rec.Code)
 
 			if expect["JoinRoomCalled"].(int) != 0 {
-				svcMock.AssertExpectations(t)
+				mongoSvcMock.AssertExpectations(t)
 			} else {
-				svcMock.AssertNotCalled(t, "JoinRoom")
+				mongoSvcMock.AssertNotCalled(t, "JoinRoom")
 			}
 		})
 	}
@@ -312,11 +317,18 @@ func TestRoomMembers(t *testing.T) {
 	expected := map[string]map[string]any{
 		"success": {
 			"status":   200,
+			"error":    nil,
 			"IsMember": true,
 		},
 		"validation error (not a member)": {
 			"status":   400,
+			"error":    nil,
 			"IsMember": false,
+		},
+		"failure to get member infos": {
+			"status":   500,
+			"error":    fmt.Errorf("GetMemberInfos error"),
+			"IsMember": true,
 		},
 	}
 
@@ -344,9 +356,23 @@ func TestRoomMembers(t *testing.T) {
 			c.SetParamValues("test-room-id")
 
 			dto := dto.NewRoomDtoStruct()
-			svcMock := new(mongo_svc_mock.RoomSvcMock)
+			mongoSvcMock := new(mongo_svc_mock.RoomSvcMock)
+			roomSvcMock := new(svc_mock.RoomSvcMock)
+			roomSvcMock.On("GetMemberInfos", room, mock.Anything).Return(
+				[]model.RoomMember{
+					{
+						Uuid:  "test-uuid",
+						Name:  "Test User",
+						Email: "test@example.com",
+					},
+					{
+						Uuid:  "owner-uuid",
+						Name:  "Owner User",
+						Email: "owner@example.com",
+					},
+				}, expect["error"]).Once()
 
-			handler := NewRoomHandler(svcMock, dto)
+			handler := NewRoomHandler(mongoSvcMock, roomSvcMock, dto)
 			err := handler.Members(c)
 			if err != nil {
 				t.Fatalf("Expected no error, got %v", err)
@@ -363,8 +389,10 @@ func TestRoomMembers(t *testing.T) {
 			assert.NoError(t, err)
 
 			assert.Len(t, result["members"], 2)
-			assert.Equal(t, "test-uuid-1234", result["members"][0])
-			assert.Equal(t, "another-uuid-91011", result["members"][1])
+			assert.Equal(t, "Test User", result["members"][0].(map[string]interface{})["name"])
+			assert.Equal(t, "Owner User", result["members"][1].(map[string]interface{})["name"])
+
+			roomSvcMock.AssertExpectations(t)
 		})
 	}
 }
@@ -418,15 +446,16 @@ func TestRoomLeave(t *testing.T) {
 			c.SetParamValues("test-room-id")
 
 			dto := dto.NewRoomDtoStruct()
-			svcMock := new(mongo_svc_mock.RoomSvcMock)
+			mongoSvcMock := new(mongo_svc_mock.RoomSvcMock)
+			roomSvcMock := new(svc_mock.RoomSvcMock)
 
 			var returnErr error = nil
 			if !expect["LeaveRoomSuccess"].(bool) {
 				returnErr = fmt.Errorf("LeaveRoom error")
 			}
-			svcMock.On("LeaveRoom", "test-room-id", "test-uuid-1234", mock.Anything).Return(returnErr).Times(expect["LeaveRoomCalled"].(int))
+			mongoSvcMock.On("LeaveRoom", "test-room-id", "test-uuid-1234", mock.Anything).Return(returnErr).Times(expect["LeaveRoomCalled"].(int))
 
-			handler := NewRoomHandler(svcMock, dto)
+			handler := NewRoomHandler(mongoSvcMock, roomSvcMock, dto)
 			err := handler.Leave(c)
 			if err != nil {
 				t.Fatalf("Expected no error, got %v", err)
@@ -435,9 +464,9 @@ func TestRoomLeave(t *testing.T) {
 			assert.Equal(t, expect["status"].(int), rec.Code)
 
 			if expect["LeaveRoomCalled"].(int) != 0 {
-				svcMock.AssertExpectations(t)
+				mongoSvcMock.AssertExpectations(t)
 			} else {
-				svcMock.AssertNotCalled(t, "LeaveRoom")
+				mongoSvcMock.AssertNotCalled(t, "LeaveRoom")
 			}
 		})
 	}
@@ -481,15 +510,16 @@ func TestRoomDelete(t *testing.T) {
 			c.SetParamValues("test-room-id")
 
 			dto := dto.NewRoomDtoStruct()
-			svcMock := new(mongo_svc_mock.RoomSvcMock)
+			mongoSvcMock := new(mongo_svc_mock.RoomSvcMock)
+			roomSvcMock := new(svc_mock.RoomSvcMock)
 
 			var returnErr error = nil
 			if !expect["DeleteRoomSuccess"].(bool) {
 				returnErr = fmt.Errorf("DeleteRoom error")
 			}
-			svcMock.On("DeleteRoom", "test-room-id", mock.Anything).Return(returnErr).Times(expect["DeleteRoomCalled"].(int))
+			mongoSvcMock.On("DeleteRoom", "test-room-id", mock.Anything).Return(returnErr).Times(expect["DeleteRoomCalled"].(int))
 
-			handler := NewRoomHandler(svcMock, dto)
+			handler := NewRoomHandler(mongoSvcMock, roomSvcMock, dto)
 			err := handler.Delete(c)
 			if err != nil {
 				t.Fatalf("Expected no error, got %v", err)
@@ -498,9 +528,9 @@ func TestRoomDelete(t *testing.T) {
 			assert.Equal(t, expect["status"].(int), rec.Code)
 
 			if expect["DeleteRoomCalled"].(int) != 0 {
-				svcMock.AssertExpectations(t)
+				mongoSvcMock.AssertExpectations(t)
 			} else {
-				svcMock.AssertNotCalled(t, "DeleteRoom")
+				mongoSvcMock.AssertNotCalled(t, "DeleteRoom")
 			}
 		})
 	}
@@ -563,17 +593,18 @@ func TestRoomAddMember(t *testing.T) {
 			c.SetParamValues("test-room-id")
 
 			dto := dto.NewRoomDtoStruct()
-			svcMock := new(mongo_svc_mock.RoomSvcMock)
+			mongoSvcMock := new(mongo_svc_mock.RoomSvcMock)
+			roomSvcMock := new(svc_mock.RoomSvcMock)
 
 			var returnErr error = nil
 			if !expect["JoinRoomSuccess"].(bool) {
 				returnErr = fmt.Errorf("JoinRoom error")
 			}
 			if expect["JoinRoomCalled"].(int) != 0 {
-				svcMock.On("JoinRoom", "test-room-id", expect["member_id"].(string), mock.Anything).Return(returnErr).Times(expect["JoinRoomCalled"].(int))
+				mongoSvcMock.On("JoinRoom", "test-room-id", expect["member_id"].(string), mock.Anything).Return(returnErr).Times(expect["JoinRoomCalled"].(int))
 			}
 
-			handler := NewRoomHandler(svcMock, dto)
+			handler := NewRoomHandler(mongoSvcMock, roomSvcMock, dto)
 			err := handler.AddMember(c)
 			if err != nil {
 				t.Fatalf("Expected no error, got %v", err)
@@ -582,9 +613,9 @@ func TestRoomAddMember(t *testing.T) {
 			assert.Equal(t, expect["status"].(int), rec.Code)
 
 			if expect["JoinRoomCalled"].(int) != 0 {
-				svcMock.AssertExpectations(t)
+				mongoSvcMock.AssertExpectations(t)
 			} else {
-				svcMock.AssertNotCalled(t, "JoinRoom")
+				mongoSvcMock.AssertNotCalled(t, "JoinRoom")
 			}
 		})
 	}
@@ -647,17 +678,18 @@ func TestRoomRemoveMember(t *testing.T) {
 			c.SetParamValues("test-room-id")
 
 			dto := dto.NewRoomDtoStruct()
-			svcMock := new(mongo_svc_mock.RoomSvcMock)
+			mongoSvcMock := new(mongo_svc_mock.RoomSvcMock)
+			roomSvcMock := new(svc_mock.RoomSvcMock)
 
 			var returnErr error = nil
 			if !expect["LeaveRoomSuccess"].(bool) {
 				returnErr = fmt.Errorf("LeaveRoom error")
 			}
 			if expect["LeaveRoomCalled"].(int) != 0 {
-				svcMock.On("LeaveRoom", "test-room-id", expect["member_id"].(string), mock.Anything).Return(returnErr).Times(expect["LeaveRoomCalled"].(int))
+				mongoSvcMock.On("LeaveRoom", "test-room-id", expect["member_id"].(string), mock.Anything).Return(returnErr).Times(expect["LeaveRoomCalled"].(int))
 			}
 
-			handler := NewRoomHandler(svcMock, dto)
+			handler := NewRoomHandler(mongoSvcMock, roomSvcMock, dto)
 			err := handler.RemoveMember(c)
 			if err != nil {
 				t.Fatalf("Expected no error, got %v", err)
@@ -666,9 +698,9 @@ func TestRoomRemoveMember(t *testing.T) {
 			assert.Equal(t, expect["status"].(int), rec.Code)
 
 			if expect["LeaveRoomCalled"].(int) != 0 {
-				svcMock.AssertExpectations(t)
+				mongoSvcMock.AssertExpectations(t)
 			} else {
-				svcMock.AssertNotCalled(t, "LeaveRoom")
+				mongoSvcMock.AssertNotCalled(t, "LeaveRoom")
 			}
 		})
 	}
