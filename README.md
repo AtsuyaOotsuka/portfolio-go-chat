@@ -56,17 +56,30 @@ CI（CircleCI）上でも同構成でテストが実行されます。
 テストカバレッジの状況はinternal 配下に関しては、すべての階層において 100%となっております
 
 ```
-ok      github.com/AtsuyaOotsuka/portfolio-go-chat      0.335s  coverage: 47.6% of statements
-ok      github.com/AtsuyaOotsuka/portfolio-go-chat/internal/app 0.007s  coverage: 100.0% of statements
+ok      github.com/AtsuyaOotsuka/portfolio-go-chat/entry_point/api      0.295s  coverage: 46.9% of statements
+        github.com/AtsuyaOotsuka/portfolio-go-chat/entry_point/cmd              coverage: 0.0% of statements
+ok      github.com/AtsuyaOotsuka/portfolio-go-chat/internal/app 0.011s  coverage: 100.0% of statements
+ok      github.com/AtsuyaOotsuka/portfolio-go-chat/internal/cmd 0.003s  coverage: 100.0% of statements
+ok      github.com/AtsuyaOotsuka/portfolio-go-chat/internal/command     1.008s  coverage: 100.0% of statements
 ok      github.com/AtsuyaOotsuka/portfolio-go-chat/internal/consts      0.002s  coverage: [no statements]
-ok      github.com/AtsuyaOotsuka/portfolio-go-chat/internal/dto 0.005s  coverage: 100.0% of statements
-ok      github.com/AtsuyaOotsuka/portfolio-go-chat/internal/handler     0.009s  coverage: 100.0% of statements
-ok      github.com/AtsuyaOotsuka/portfolio-go-chat/internal/middleware  0.012s  coverage: 100.0% of statements
-ok      github.com/AtsuyaOotsuka/portfolio-go-chat/internal/model       0.003s  coverage: [no statements]
-ok      github.com/AtsuyaOotsuka/portfolio-go-chat/internal/provider    0.010s  coverage: 100.0% of statements
-ok      github.com/AtsuyaOotsuka/portfolio-go-chat/internal/routing     0.005s  coverage: 100.0% of statements
-ok      github.com/AtsuyaOotsuka/portfolio-go-chat/internal/routing/room_routing        0.023s  coverage: 100.0% of statements
-ok      github.com/AtsuyaOotsuka/portfolio-go-chat/internal/service     0.009s  coverage: 100.0% of statements
-ok      github.com/AtsuyaOotsuka/portfolio-go-chat/internal/service/mongo_svc   0.011s  coverage: 100.0% of statements
-ok      github.com/AtsuyaOotsuka/portfolio-go-chat/internal/usecase     0.014s  coverage: 100.0% of statements
+ok      github.com/AtsuyaOotsuka/portfolio-go-chat/internal/dto 0.003s  coverage: 100.0% of statements
+ok      github.com/AtsuyaOotsuka/portfolio-go-chat/internal/handler     0.006s  coverage: 100.0% of statements
+ok      github.com/AtsuyaOotsuka/portfolio-go-chat/internal/middleware  0.013s  coverage: 100.0% of statements
+ok      github.com/AtsuyaOotsuka/portfolio-go-chat/internal/model       0.002s  coverage: [no statements]
+ok      github.com/AtsuyaOotsuka/portfolio-go-chat/internal/provider    0.011s  coverage: 100.0% of statements
+ok      github.com/AtsuyaOotsuka/portfolio-go-chat/internal/routing     0.012s  coverage: 100.0% of statements
+ok      github.com/AtsuyaOotsuka/portfolio-go-chat/internal/routing/room_routing        0.018s  coverage: 100.0% of statements
+ok      github.com/AtsuyaOotsuka/portfolio-go-chat/internal/service     0.012s  coverage: 100.0% of statements
+ok      github.com/AtsuyaOotsuka/portfolio-go-chat/internal/service/cmd_svc     0.008s  coverage: 100.0% of statements
+ok      github.com/AtsuyaOotsuka/portfolio-go-chat/internal/service/mongo_svc   0.004s  coverage: 100.0% of statements
+ok      github.com/AtsuyaOotsuka/portfolio-go-chat/internal/usecase     0.003s  coverage: 100.0% of statements
 ```
+
+## おわりに
+
+本システムの構成は、かなり冗長なっております。
+ポートフォリオという特性上、できる限り多くの領域を表現する必要があるため、
+様々な案件で対応可能とするため、Clean Architecture 風の実装、カバレッジ100％を意識したテストで実装を行いました。
+
+実際に参画させていただいた際には、
+コーディング規約、チームの慣習とうに則った対応をさせていただく所存でございます。
